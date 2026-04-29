@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Settings as SettingsIcon, Sparkles } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles } from 'lucide-react';
 import CommandPalette from './CommandPalette';
 import { useAuthStore } from '../../store/auth.store';
 import toast from 'react-hot-toast';
@@ -57,6 +57,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/oncall" className={navClass}>
             <CalendarClock size={16} /> On-Call
+          </NavLink>
+          <NavLink to="/escalations" className={navClass}>
+            <Bell size={16} /> Escalations
           </NavLink>
           <NavLink to="/settings" className={navClass}>
             <SettingsIcon size={16} /> Settings

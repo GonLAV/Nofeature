@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Settings as SettingsIcon, Key, Shield, Webhook as WebhookIcon, Trash2, Plus, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
+import NotificationPrefs from '../../components/settings/NotificationPrefs';
 
 interface ApiKey { id: string; name: string; key_prefix: string; last_used_at: string | null; revoked_at: string | null; created_at: string }
 interface IPRule { id: string; cidr: string; description: string | null }
@@ -85,6 +86,8 @@ export default function Settings() {
   return (
     <div className="p-6 max-w-5xl mx-auto space-y-8">
       <h1 className="text-xl font-semibold flex items-center gap-2"><SettingsIcon size={20}/> Settings</h1>
+
+      <NotificationPrefs />
 
       {/* API Keys */}
       <section className="bg-white border rounded-xl p-5 space-y-3">

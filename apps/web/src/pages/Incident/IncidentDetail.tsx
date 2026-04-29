@@ -10,6 +10,8 @@ import SimilarIncidents from '../../components/incident/SimilarIncidents';
 import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
 import LinkedIncidentsPanel from '../../components/incident/LinkedIncidentsPanel';
 import ExportButtons from '../../components/incident/ExportButtons';
+import CommentsPanel from '../../components/incident/CommentsPanel';
+import TagsPanel from '../../components/incident/TagsPanel';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -159,6 +161,8 @@ export default function IncidentDetail() {
         )}
       </div>
       {id && <IncidentLinks incidentId={id} />}
+      {id && <TagsPanel incidentId={id} />}
+      {id && <CommentsPanel incidentId={id} />}
       {id && <LinkedIncidentsPanel incidentId={id} />}
       {id && incident && (
         <CustomerImpactPanel
