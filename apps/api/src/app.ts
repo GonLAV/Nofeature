@@ -16,6 +16,10 @@ import incidentRoutes from './modules/incidents/incident.routes';
 import userRoutes from './modules/users/user.routes';
 import tenantRoutes from './modules/tenants/tenant.routes';
 import aiRoutes from './modules/ai/ai.routes';
+import statusRoutes from './modules/status/status.routes';
+import runbookRoutes from './modules/runbooks/runbook.routes';
+import slaRoutes from './modules/sla/sla.routes';
+import auditRoutes from './modules/audit/audit.routes';
 
 const app = express();
 
@@ -74,6 +78,10 @@ app.use(`${API}/incidents`, incidentRoutes);
 app.use(`${API}/users`,     userRoutes);
 app.use(`${API}/tenants`,   tenantRoutes);
 app.use(`${API}/ai`,        aiRoutes);
+app.use(`${API}/public`,    statusRoutes);
+app.use(`${API}/runbooks`,  runbookRoutes);
+app.use(`${API}/sla`,       slaRoutes);
+app.use(`${API}/audit`,     auditRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, AlertTriangle } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText } from 'lucide-react';
 import { useAuthStore } from '../../store/auth.store';
 import toast from 'react-hot-toast';
 
@@ -29,6 +29,15 @@ export default function Layout() {
         <nav className="flex-1 p-3 space-y-1">
           <NavLink to="/" end className={navClass}>
             <LayoutDashboard size={16} /> Dashboard
+          </NavLink>
+          <NavLink to="/runbooks" className={navClass}>
+            <BookOpen size={16} /> Runbooks
+          </NavLink>
+          <NavLink to="/team" className={navClass}>
+            <Users size={16} /> Team
+          </NavLink>
+          <NavLink to="/audit" className={navClass}>
+            <ScrollText size={16} /> Audit Log
           </NavLink>
           <NavLink to="/analytics" className={navClass}>
             <BarChart2 size={16} /> Analytics

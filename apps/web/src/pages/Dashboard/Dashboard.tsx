@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Plus, AlertTriangle, CheckCircle, Clock, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
+import SlaWidget from '../../components/incident/SlaWidget';
 
 const SEVERITY_COLORS: Record<string, string> = {
   P1: 'bg-red-100 text-red-800 border-red-200',
@@ -45,6 +46,7 @@ export default function Dashboard() {
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
+      <SlaWidget />
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
