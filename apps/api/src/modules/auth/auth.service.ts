@@ -73,11 +73,12 @@ export class AuthService {
     logger.warn('All sessions revoked', { userId });
   }
 
-  private async generateTokenPair(user: { id: string; tenant_id: string; email: string; role: string }) {
+  private async generateTokenPair(user: { id: string; tenant_id: string; email: string; name: string; role: string }) {
     const payload: JwtPayload = {
       userId: user.id,
       tenantId: user.tenant_id,
       email: user.email,
+      name: user.name,
       role: user.role,
     };
 

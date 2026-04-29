@@ -14,6 +14,16 @@ router.post('/incidents/:id/analyze', async (req: Request, res: Response, next: 
   } catch (err) { next(err); }
 });
 
+// Streaming analysis — SSE response, tokens appear in real-time for all war room participants
+router.post('/incidents/:id/analyze/stream', async (req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  await aiService.streamAnalysis(req.params.id, req.user!.tenantId, res);
+});
+
 router.get('/incidents/:id/postmortem', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const report = await aiService.generatePostMortem(req.params.id, req.user!.tenantId);

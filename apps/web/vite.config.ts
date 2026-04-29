@@ -6,7 +6,18 @@ export default defineConfig({
   server: {
     port: 3000,
     proxy: {
-      '/api': { target: 'http://localhost:4000', changeOrigin: true },
+      '/api': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+        // Required for SSE and streaming responses: disable response buffering
+        configure: (proxy) => {
+          proxy.on('proxyRes', (proxyRes) => {
+            if (proxyRes.headers['content-type']?.includes('text/event-stream')) {
+              proxyRes.headers['cache-control'] = 'no-cache';
+            }
+          });
+        },
+      },
     },
   },
 });

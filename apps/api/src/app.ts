@@ -16,6 +16,7 @@ import incidentRoutes from './modules/incidents/incident.routes';
 import userRoutes from './modules/users/user.routes';
 import tenantRoutes from './modules/tenants/tenant.routes';
 import aiRoutes from './modules/ai/ai.routes';
+import warRoomRoutes from './modules/warroom/warroom.routes';
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use(`${API}/incidents`, incidentRoutes);
 app.use(`${API}/users`,     userRoutes);
 app.use(`${API}/tenants`,   tenantRoutes);
 app.use(`${API}/ai`,        aiRoutes);
+app.use(`${API}/warroom`,   warRoomRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

@@ -1,6 +1,7 @@
 import { IncidentRepository, Severity, IncidentStatus } from './incident.repository';
 import { AIService } from '../ai/ai.service';
 import { NotificationService } from '../notifications/notification.service';
+import { publish } from '../warroom/warroom.events';
 import { NotFoundError, ForbiddenError } from '../../utils/errors';
 import { logger } from '../../utils/logger';
 
@@ -67,11 +68,14 @@ export class IncidentService {
 
     const updated = await this.incidentRepo.updateStatus(id, tenantId, status, userId);
 
-    await this.incidentRepo.addTimelineEntry({
+    const entry = await this.incidentRepo.addTimelineEntry({
       incidentId: id, tenantId, userId,
       action: 'STATUS_CHANGED',
       metadata: { from: incident.status, to: status },
     });
+
+    publish(id, { type: 'incident_updated', payload: updated });
+    publish(id, { type: 'timeline_entry', payload: entry });
 
     if (status === 'resolved') {
       await this.notificationService.notifyResolved(updated).catch(() => {});
@@ -86,11 +90,14 @@ export class IncidentService {
 
     const updated = await this.incidentRepo.assignCommander(id, tenantId, commanderId);
 
-    await this.incidentRepo.addTimelineEntry({
+    const entry = await this.incidentRepo.addTimelineEntry({
       incidentId: id, tenantId, userId: requesterId,
       action: 'COMMANDER_ASSIGNED',
       metadata: { commanderId },
     });
+
+    publish(id, { type: 'incident_updated', payload: updated });
+    publish(id, { type: 'timeline_entry', payload: entry });
 
     return updated;
   }
