@@ -39,6 +39,7 @@ import searchRoutes from './modules/incidents/incident.search.routes';
 import opsRoutes from './modules/ops/ops.routes';
 import mentionsRoutes from './modules/mentions/mentions.routes';
 import postmortemsRoutes from './modules/postmortems/postmortems.routes';
+import watchersRoutes from './modules/watchers/watchers.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
 const app = express();
@@ -119,6 +120,7 @@ app.use(`${API}`,              searchRoutes);
 app.use(`${API}`,              opsRoutes);
 app.use(`${API}`,              mentionsRoutes);
 app.use(`${API}`,              postmortemsRoutes);
+app.use(`${API}`,              watchersRoutes);
 app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);
