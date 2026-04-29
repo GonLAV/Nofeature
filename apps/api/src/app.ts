@@ -18,6 +18,7 @@ import tenantRoutes from './modules/tenants/tenant.routes';
 import aiRoutes from './modules/ai/ai.routes';
 import warRoomRoutes from './modules/warroom/warroom.routes';
 import billingRoutes, { webhookHandler } from './modules/billing/billing.routes';
+import publicRoutes from './modules/public/public.routes';
 
 const app = express();
 
@@ -86,6 +87,8 @@ app.use(`${API}/tenants`,   tenantRoutes);
 app.use(`${API}/ai`,        aiRoutes);
 app.use(`${API}/warroom`,   warRoomRoutes);
 app.use(`${API}/billing`,   billingRoutes);
+// Public routes — no auth, used by the status page
+app.use(`${API}/public`,    publicRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);
