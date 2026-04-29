@@ -1,10 +1,33 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon } from 'lucide-react';
 import { useThemeStore } from '../../store/theme.store';
 import MentionsBell from './MentionsBell';
 import CommandPalette from './CommandPalette';
 import { useAuthStore } from '../../store/auth.store';
+import { useQuery } from '@tanstack/react-query';
+import api from '../../lib/api';
 import toast from 'react-hot-toast';
+
+function InboxNavLink() {
+  const navClass = ({ isActive }: { isActive: boolean }) =>
+    `flex items-center gap-2 px-3 py-2 rounded-lg text-sm transition-colors ${
+      isActive ? 'bg-red-50 text-red-700 font-medium' : 'text-gray-600 hover:bg-gray-100'
+    }`;
+  const { data } = useQuery({
+    queryKey: ['inbox-count'],
+    queryFn: () => api.get('/inbox/count').then(r => r.data?.data),
+    refetchInterval: 30000,
+  });
+  const count = data?.total ?? 0;
+  return (
+    <NavLink to="/inbox" className={navClass}>
+      <InboxIcon size={16} /> Inbox
+      {count > 0 && (
+        <span className="ml-auto px-1.5 py-0.5 text-xs bg-blue-600 text-white rounded-full">{count}</span>
+      )}
+    </NavLink>
+  );
+}
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
@@ -77,6 +100,7 @@ export default function Layout() {
           <NavLink to="/services" className={navClass}>
             <Server size={16} /> Services
           </NavLink>
+          <InboxNavLink />
           <NavLink to="/settings" className={navClass}>
             <SettingsIcon size={16} /> Settings
           </NavLink>

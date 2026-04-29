@@ -21,6 +21,7 @@ import SearchPage from './pages/Search/Search';
 import Postmortems from './pages/Postmortems/Postmortems';
 import Board from './pages/Board/Board';
 import Services from './pages/Services/Services';
+import Inbox from './pages/Inbox/Inbox';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="postmortems" element={<Postmortems />} />
           <Route path="board" element={<Board />} />
           <Route path="services" element={<Services />} />
+          <Route path="inbox" element={<Inbox />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
