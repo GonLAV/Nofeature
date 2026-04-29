@@ -4,6 +4,7 @@ import { Settings as SettingsIcon, Key, Shield, Webhook as WebhookIcon, Trash2, 
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import NotificationPrefs from '../../components/settings/NotificationPrefs';
+import SlaSettings from '../../components/settings/SlaSettings';
 
 interface ApiKey { id: string; name: string; key_prefix: string; last_used_at: string | null; revoked_at: string | null; created_at: string }
 interface IPRule { id: string; cidr: string; description: string | null }
@@ -88,6 +89,7 @@ export default function Settings() {
       <h1 className="text-xl font-semibold flex items-center gap-2"><SettingsIcon size={20}/> Settings</h1>
 
       <NotificationPrefs />
+      <SlaSettings />
 
       {/* API Keys */}
       <section className="bg-white border rounded-xl p-5 space-y-3">

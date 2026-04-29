@@ -13,6 +13,9 @@ import ExportButtons from '../../components/incident/ExportButtons';
 import CommentsPanel from '../../components/incident/CommentsPanel';
 import TagsPanel from '../../components/incident/TagsPanel';
 import PresenceIndicator from '../../components/incident/PresenceIndicator';
+import SlaBadge from '../../components/incident/SlaBadge';
+import ActionItemsPanel from '../../components/incident/ActionItemsPanel';
+import RelatedIncidentsPanel from '../../components/incident/RelatedIncidentsPanel';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -29,6 +32,11 @@ export default function IncidentDetail() {
   const statusMutation = useMutation({
     mutationFn: (status: string) => api.patch(`/incidents/${id}/status`, { status }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['incident', id] }); toast.success('Status updated'); },
+  });
+
+  const ackMutation = useMutation({
+    mutationFn: () => api.post(`/incidents/${id}/acknowledge`),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['incident', id] }); qc.invalidateQueries({ queryKey: ['sla', id] }); toast.success('Acknowledged'); },
   });
 
   const analyzeMutation = useMutation({
@@ -162,9 +170,12 @@ export default function IncidentDetail() {
         )}
       </div>
       {id && <IncidentLinks incidentId={id} />}
+      {id && <SlaBadge incidentId={id} canAck={!incident.acknowledged_at && incident.status !== 'closed'} onAcknowledge={() => ackMutation.mutate()}/>}
       {id && <PresenceIndicator incidentId={id} />}
       {id && <TagsPanel incidentId={id} />}
       {id && <CommentsPanel incidentId={id} />}
+      {id && <ActionItemsPanel incidentId={id} />}
+      {id && <RelatedIncidentsPanel incidentId={id} />}
       {id && <LinkedIncidentsPanel incidentId={id} />}
       {id && incident && (
         <CustomerImpactPanel
