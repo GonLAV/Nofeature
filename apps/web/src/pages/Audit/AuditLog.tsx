@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { format } from 'date-fns';
 import { ScrollText } from 'lucide-react';
+import { useAuthStore } from '../../store/auth.store';
 
 interface AuditLog {
   id: string;
@@ -44,6 +45,24 @@ export default function AuditLog() {
         <ScrollText className="w-6 h-6 text-gray-700" />
         <h1 className="text-2xl font-bold text-gray-900">Audit Log</h1>
         <span className="ml-auto text-sm text-gray-500">{total} entries</span>
+        <button
+          onClick={async () => {
+            const token = useAuthStore.getState().accessToken;
+            const base = (import.meta.env.VITE_API_URL ?? '/api/v1') as string;
+            const resp = await fetch(`${base}/audit/export.csv?days=90`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            });
+            if (!resp.ok) return;
+            const blob = await resp.blob();
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = `audit-${new Date().toISOString().slice(0,10)}.csv`;
+            document.body.appendChild(a); a.click(); a.remove();
+            URL.revokeObjectURL(a.href);
+          }}
+          className="text-xs border rounded px-3 py-1.5 hover:bg-gray-50">
+          Export CSV
+        </button>
       </div>
 
       <div className="flex gap-2 mb-4">

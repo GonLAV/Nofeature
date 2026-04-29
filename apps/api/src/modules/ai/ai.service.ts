@@ -168,4 +168,62 @@ If asked about logs/code/external systems you don't have, say so and suggest wha
 
     return response.content[0].type === 'text' ? response.content[0].text : '';
   }
+
+  async weeklyDigest(tenantId: string): Promise<{ stats: Record<string, number>; report: string }> {
+    const db = (await import('../../config/database')).default;
+    const { rows: stats } = await db.query(
+      `SELECT
+         COUNT(*) FILTER (WHERE created_at >= NOW() - INTERVAL '7 days') AS created_7d,
+         COUNT(*) FILTER (WHERE resolved_at >= NOW() - INTERVAL '7 days') AS resolved_7d,
+         COUNT(*) FILTER (WHERE severity = 'P1' AND created_at >= NOW() - INTERVAL '7 days') AS p1_7d,
+         COUNT(*) FILTER (WHERE severity = 'P2' AND created_at >= NOW() - INTERVAL '7 days') AS p2_7d
+       FROM incidents WHERE tenant_id = $1 AND deleted_at IS NULL`,
+      [tenantId]
+    );
+    const { rows: top } = await db.query(
+      `SELECT id, title, severity, status, created_at, resolved_at, ai_summary
+       FROM incidents
+       WHERE tenant_id = $1 AND deleted_at IS NULL
+         AND created_at >= NOW() - INTERVAL '7 days'
+       ORDER BY CASE severity WHEN 'P1' THEN 1 WHEN 'P2' THEN 2 WHEN 'P3' THEN 3 ELSE 4 END,
+                created_at DESC
+       LIMIT 10`,
+      [tenantId]
+    );
+
+    const s = stats[0];
+    const incidentList = top.map((i: { severity: string; title: string; status: string; ai_summary: string | null }) =>
+      `- [${i.severity}] ${i.title} (${i.status})${i.ai_summary ? ` — ${i.ai_summary}` : ''}`
+    ).join('\n') || '(none)';
+
+    if (!process.env.ANTHROPIC_API_KEY) {
+      return {
+        stats: { created: Number(s.created_7d), resolved: Number(s.resolved_7d), p1: Number(s.p1_7d), p2: Number(s.p2_7d) },
+        report: `## Weekly digest\n\n- Created: ${s.created_7d}\n- Resolved: ${s.resolved_7d}\n- P1: ${s.p1_7d}\n- P2: ${s.p2_7d}\n\n### Top incidents\n${incidentList}`,
+      };
+    }
+
+    const response = await this.client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 700,
+      messages: [{
+        role: 'user',
+        content: `You are an SRE manager. Write a concise weekly incident digest in Markdown for the team.
+Include: headline summary (1 sentence), key trends, recurring themes, and 3 recommended focus areas.
+
+Stats (last 7d): created=${s.created_7d}, resolved=${s.resolved_7d}, P1=${s.p1_7d}, P2=${s.p2_7d}
+
+Top incidents:
+${incidentList}
+
+Write in 200-300 words. Use ## headings.`,
+      }],
+    });
+
+    const report = response.content[0].type === 'text' ? response.content[0].text : '';
+    return {
+      stats: { created: Number(s.created_7d), resolved: Number(s.resolved_7d), p1: Number(s.p1_7d), p2: Number(s.p2_7d) },
+      report,
+    };
+  }
 }

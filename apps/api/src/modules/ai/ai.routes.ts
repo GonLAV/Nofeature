@@ -50,4 +50,11 @@ router.post('/incidents/:id/chat', async (req: Request, res: Response, next: Nex
   } catch (err) { next(err); }
 });
 
+router.get('/digest', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const data = await aiService.weeklyDigest(req.user!.tenantId);
+    res.json({ success: true, data });
+  } catch (err) { next(err); }
+});
+
 export default router;

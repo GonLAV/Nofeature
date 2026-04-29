@@ -8,6 +8,8 @@ import IncidentChat from '../../components/incident/IncidentChat';
 import IncidentLinks from '../../components/incident/IncidentLinks';
 import SimilarIncidents from '../../components/incident/SimilarIncidents';
 import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
+import LinkedIncidentsPanel from '../../components/incident/LinkedIncidentsPanel';
+import ExportButtons from '../../components/incident/ExportButtons';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -157,6 +159,7 @@ export default function IncidentDetail() {
         )}
       </div>
       {id && <IncidentLinks incidentId={id} />}
+      {id && <LinkedIncidentsPanel incidentId={id} />}
       {id && incident && (
         <CustomerImpactPanel
           incidentId={id}
@@ -164,6 +167,7 @@ export default function IncidentDetail() {
           revenue_impact_usd={incident.revenue_impact_usd}
         />
       )}
+      {id && <ExportButtons incidentId={id} />}
       {id && <SimilarIncidents incidentId={id} />}
       {id && <IncidentChat incidentId={id} />}
     </div>

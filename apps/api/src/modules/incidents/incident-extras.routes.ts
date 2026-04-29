@@ -155,4 +155,77 @@ router.delete('/saved-filters/:id', async (req: Request, res: Response, next: Ne
   } catch (err) { next(err); }
 });
 
+// ── Exports: postmortem markdown + timeline CSV ─────────────
+router.get('/incidents/:id/export.md', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const inc = await db.query(
+      `SELECT i.*, u.name AS commander_name, u.email AS commander_email
+       FROM incidents i LEFT JOIN users u ON u.id = i.commander_id
+       WHERE i.id = $1 AND i.tenant_id = $2`,
+      [req.params.id, req.user!.tenantId]
+    );
+    if (!inc.rows[0]) return res.status(404).json({ success: false, error: 'Not found' });
+    const i = inc.rows[0];
+
+    const tl = await db.query(
+      `SELECT t.*, u.name AS user_name FROM incident_timeline t
+       LEFT JOIN users u ON u.id = t.user_id
+       WHERE t.incident_id = $1 ORDER BY t.created_at ASC`,
+      [req.params.id]
+    );
+
+    const action = (i.ai_action_items || {}) as { immediate?: string[]; prevention?: string[] };
+    const lines: string[] = [];
+    lines.push(`# Postmortem: ${i.title}`, '');
+    lines.push(`- **ID:** ${i.id}`);
+    lines.push(`- **Severity:** ${i.severity}`);
+    lines.push(`- **Status:** ${i.status}`);
+    lines.push(`- **Commander:** ${i.commander_name ?? 'unassigned'}${i.commander_email ? ` <${i.commander_email}>` : ''}`);
+    lines.push(`- **Created:** ${new Date(i.created_at).toISOString()}`);
+    if (i.resolved_at) lines.push(`- **Resolved:** ${new Date(i.resolved_at).toISOString()}`);
+    if (i.customers_affected != null) lines.push(`- **Customers affected:** ${i.customers_affected}`);
+    if (i.revenue_impact_usd != null) lines.push(`- **Revenue impact:** $${i.revenue_impact_usd}`);
+    lines.push('', '## Description', '', i.description || '_n/a_');
+    if (i.ai_summary)    lines.push('', '## Summary', '', i.ai_summary);
+    if (i.ai_root_cause) lines.push('', '## Root Cause', '', i.ai_root_cause);
+    if (action.immediate?.length)  lines.push('', '## Immediate Actions', ...action.immediate.map((a) => `- ${a}`));
+    if (action.prevention?.length) lines.push('', '## Prevention', ...action.prevention.map((a) => `- ${a}`));
+    lines.push('', '## Timeline');
+    for (const e of tl.rows) {
+      lines.push(`- \`${new Date(e.created_at).toISOString()}\` **${e.event_type}** ${e.user_name ? `(${e.user_name})` : ''} — ${e.description ?? ''}`);
+    }
+
+    const body = lines.join('\n');
+    res.setHeader('Content-Type', 'text/markdown');
+    res.setHeader('Content-Disposition', `attachment; filename="postmortem-${i.id}.md"`);
+    res.send(body);
+  } catch (err) { next(err); }
+});
+
+router.get('/incidents/:id/timeline.csv', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const inc = await db.query(`SELECT id FROM incidents WHERE id = $1 AND tenant_id = $2`,
+      [req.params.id, req.user!.tenantId]);
+    if (!inc.rows[0]) return res.status(404).json({ success: false, error: 'Not found' });
+    const { rows } = await db.query(
+      `SELECT t.created_at, t.event_type, t.description, u.name AS user_name, u.email AS user_email
+       FROM incident_timeline t LEFT JOIN users u ON u.id = t.user_id
+       WHERE t.incident_id = $1 ORDER BY t.created_at ASC`,
+      [req.params.id]
+    );
+    const esc = (v: unknown) => {
+      if (v == null) return '';
+      const s = String(v).replace(/"/g, '""');
+      return /[",\n]/.test(s) ? `"${s}"` : s;
+    };
+    const header = 'timestamp,event_type,user,email,description\n';
+    const body = rows.map((r) => [
+      r.created_at.toISOString(), r.event_type, r.user_name ?? '', r.user_email ?? '', r.description ?? ''
+    ].map(esc).join(',')).join('\n');
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', `attachment; filename="timeline-${req.params.id}.csv"`);
+    res.send(header + body);
+  } catch (err) { next(err); }
+});
+
 export default router;
