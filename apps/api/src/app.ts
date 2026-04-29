@@ -20,6 +20,8 @@ import statusRoutes from './modules/status/status.routes';
 import runbookRoutes from './modules/runbooks/runbook.routes';
 import slaRoutes from './modules/sla/sla.routes';
 import auditRoutes from './modules/audit/audit.routes';
+import patternsRoutes from './modules/patterns/patterns.routes';
+import metricsRoutes from './modules/metrics/metrics.routes';
 
 const app = express();
 
@@ -82,6 +84,8 @@ app.use(`${API}/public`,    statusRoutes);
 app.use(`${API}/runbooks`,  runbookRoutes);
 app.use(`${API}/sla`,       slaRoutes);
 app.use(`${API}/audit`,     auditRoutes);
+app.use(`${API}/patterns`,  patternsRoutes);
+app.use(`${API}/metrics`,   metricsRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

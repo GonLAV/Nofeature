@@ -4,6 +4,7 @@ import { Zap, Clock, User, AlertTriangle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import api from '../../lib/api';
+import IncidentChat from '../../components/incident/IncidentChat';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -152,6 +153,7 @@ export default function IncidentDetail() {
           </div>
         )}
       </div>
+      {id && <IncidentChat incidentId={id} />}
     </div>
   );
 }

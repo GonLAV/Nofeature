@@ -1,11 +1,35 @@
 import { useQuery } from '@tanstack/react-query';
-import { BarChart2, Clock, TrendingDown } from 'lucide-react';
+import { BarChart2, Clock, TrendingDown, Repeat, Server } from 'lucide-react';
 import api from '../../lib/api';
+
+interface MetricsOverview {
+  totals: { total: number; active: number; resolved: number; avg_mttr_min: number | null };
+  series: Array<{ day: string; total: string; p1: string; p2: string; p3: string; p4: string }>;
+  top_systems: Array<{ system: string; count: string }>;
+}
+interface RecurringPattern {
+  pattern_key: string;
+  occurrences: number;
+  last_seen: string;
+  severities: string[];
+  recent_incidents: Array<{ id: string; title: string; created_at: string; severity: string }>;
+  avg_mttr_min: number | null;
+}
 
 export default function Analytics() {
   const { data, isLoading } = useQuery({
     queryKey: ['incidents-analytics'],
     queryFn: () => api.get('/incidents?limit=100').then(r => r.data.data),
+  });
+
+  const { data: metrics } = useQuery<MetricsOverview>({
+    queryKey: ['metrics-overview'],
+    queryFn: () => api.get('/metrics/overview?days=30').then(r => r.data.data),
+  });
+
+  const { data: recurring } = useQuery<RecurringPattern[]>({
+    queryKey: ['recurring-patterns'],
+    queryFn: () => api.get('/patterns/recurring').then(r => r.data.data),
   });
 
   const incidents = data?.incidents ?? [];
@@ -72,6 +96,65 @@ export default function Analytics() {
           ))}
         </div>
       </div>
+
+      {/* 30-day trend */}
+      {metrics?.series && metrics.series.length > 0 && (
+        <div className="bg-white rounded-xl border p-5">
+          <h2 className="font-semibold mb-4">Incidents — Last 30 Days</h2>
+          <div className="flex items-end gap-1 h-32">
+            {metrics.series.map((d) => {
+              const max = Math.max(...metrics.series.map(s => parseInt(s.total)), 1);
+              const h = (parseInt(d.total) / max) * 100;
+              return (
+                <div key={d.day} className="flex-1 flex flex-col items-center gap-1" title={`${d.day}: ${d.total} incidents`}>
+                  <div className="w-full bg-blue-500 hover:bg-blue-600 rounded-t" style={{ height: `${h}%`, minHeight: parseInt(d.total) > 0 ? '4px' : '0' }} />
+                </div>
+              );
+            })}
+          </div>
+          <div className="text-xs text-gray-400 mt-2">
+            Avg MTTR (30d): {metrics.totals.avg_mttr_min ? `${metrics.totals.avg_mttr_min} min` : 'n/a'}
+          </div>
+        </div>
+      )}
+
+      {/* Top affected systems */}
+      {metrics?.top_systems && metrics.top_systems.length > 0 && (
+        <div className="bg-white rounded-xl border p-5">
+          <h2 className="font-semibold mb-4 flex items-center gap-2"><Server size={16}/> Top Affected Systems (30d)</h2>
+          <div className="space-y-2">
+            {metrics.top_systems.map((s) => (
+              <div key={s.system} className="flex items-center gap-3 text-sm">
+                <span className="flex-1 text-gray-700 truncate">{s.system}</span>
+                <span className="text-gray-400">{s.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Recurring patterns */}
+      {recurring && recurring.length > 0 && (
+        <div className="bg-white rounded-xl border p-5">
+          <h2 className="font-semibold mb-4 flex items-center gap-2"><Repeat size={16}/> Recurring Incident Patterns</h2>
+          <div className="space-y-3">
+            {recurring.map((r) => (
+              <div key={r.pattern_key} className="border-l-4 border-amber-400 pl-3 py-1">
+                <div className="flex items-center gap-2">
+                  <span className="font-medium text-gray-800 capitalize">{r.pattern_key.trim()}</span>
+                  <span className="text-xs px-2 py-0.5 bg-amber-100 text-amber-800 rounded">{r.occurrences}x</span>
+                  {r.severities.map(s => (
+                    <span key={s} className="text-xs px-1.5 py-0.5 bg-gray-100 text-gray-700 rounded">{s}</span>
+                  ))}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  Avg MTTR: {r.avg_mttr_min ? `${r.avg_mttr_min}m` : 'n/a'} • Latest: {r.recent_incidents[0]?.title}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Recent resolved */}
       <div className="bg-white rounded-xl border p-5">

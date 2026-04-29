@@ -125,4 +125,47 @@ Format as markdown with sections: Summary, Impact, Timeline, Root Cause, Action 
       return ['backend-engineer', 'devops-engineer'];
     }
   }
+
+  async chatAboutIncident(
+    incidentId: string,
+    tenantId: string,
+    history: Array<{ role: 'user' | 'assistant'; content: string }>,
+    userMessage: string
+  ): Promise<string> {
+    const incident = await this.incidentRepo.findById(incidentId, tenantId);
+    if (!incident) throw new Error('Incident not found');
+    const timeline = await this.incidentRepo.getTimeline(incidentId, tenantId);
+
+    const systemPrompt = `You are an SRE incident-response assistant helping a war room.
+Be concise, technical, and actionable. Cite the incident facts you have.
+
+Current incident:
+- Title: ${incident.title}
+- Severity: ${incident.severity}
+- Status: ${incident.status}
+- Description: ${incident.description}
+- Affected systems: ${incident.affected_systems?.join(', ') || 'unknown'}
+- AI root cause (if any): ${incident.ai_root_cause || 'not analyzed yet'}
+- AI summary: ${incident.ai_summary || 'n/a'}
+- Created: ${incident.created_at}
+- Resolved: ${incident.resolved_at || 'ongoing'}
+
+Recent timeline:
+${timeline.slice(0, 10).map((t) => `- ${t.created_at} ${t.action}`).join('\n') || '- (none yet)'}
+
+If asked about logs/code/external systems you don't have, say so and suggest what to check.`;
+
+    const trimmed = history.slice(-12);
+    const response = await this.client.messages.create({
+      model: 'claude-opus-4-6',
+      max_tokens: 800,
+      system: systemPrompt,
+      messages: [
+        ...trimmed.map((m) => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: userMessage },
+      ],
+    });
+
+    return response.content[0].type === 'text' ? response.content[0].text : '';
+  }
 }
