@@ -32,6 +32,8 @@ import webhookRoutes from './modules/webhooks/webhooks.routes';
 import oncallRoutes from './modules/oncall/oncall.routes';
 import collaborationRoutes from './modules/collaboration/collaboration.routes';
 import escalationRoutes from './modules/escalations/escalations.routes';
+import bulkRoutes from './modules/bulk/bulk.routes';
+import presenceRoutes from './modules/presence/presence.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
 const app = express();
@@ -107,6 +109,8 @@ app.use(`${API}/webhooks`,     webhookRoutes);
 app.use(`${API}/oncall`,       oncallRoutes);
 app.use(`${API}/escalations`, escalationRoutes);
 app.use(`${API}`,              collaborationRoutes);
+app.use(`${API}`,              bulkRoutes);
+app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);
 
 // ── Error Handling ──────────────────────────────────────────

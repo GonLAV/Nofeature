@@ -70,13 +70,57 @@ interface WebhookRow {
   events: string[]; is_active: boolean;
 }
 
+function formatSlackPayload(event: string, payload: any): object {
+  const sevColor: Record<string, string> = { P1: '#dc2626', P2: '#ea580c', P3: '#ca8a04', P4: '#65a30d' };
+  const title = payload?.title ?? payload?.message ?? event;
+  const sev = payload?.severity ?? '';
+  return {
+    text: `[${event}] ${title}`,
+    attachments: [{
+      color: sevColor[sev] ?? '#3b82f6',
+      fields: [
+        { title: 'Event', value: event, short: true },
+        ...(sev ? [{ title: 'Severity', value: sev, short: true }] : []),
+        ...(payload?.status ? [{ title: 'Status', value: payload.status, short: true }] : []),
+        ...(payload?.commander_name ? [{ title: 'Commander', value: payload.commander_name, short: true }] : []),
+      ],
+      ts: Math.floor(Date.now() / 1000),
+    }],
+  };
+}
+
+function formatTeamsPayload(event: string, payload: any): object {
+  const sevColor: Record<string, string> = { P1: 'dc2626', P2: 'ea580c', P3: 'ca8a04', P4: '65a30d' };
+  const title = payload?.title ?? payload?.message ?? event;
+  const sev = payload?.severity ?? '';
+  const facts = [
+    { name: 'Event', value: event },
+    ...(sev ? [{ name: 'Severity', value: sev }] : []),
+    ...(payload?.status ? [{ name: 'Status', value: payload.status }] : []),
+    ...(payload?.commander_name ? [{ name: 'Commander', value: payload.commander_name }] : []),
+  ];
+  return {
+    '@type': 'MessageCard',
+    '@context': 'https://schema.org/extensions',
+    themeColor: sevColor[sev] ?? '3b82f6',
+    summary: `${event}: ${title}`,
+    sections: [{ activityTitle: title, activitySubtitle: event, facts }],
+  };
+}
+
 export async function deliverWebhook(wh: WebhookRow, event: string, payload: object): Promise<number | null> {
-  const body = JSON.stringify({ event, timestamp: new Date().toISOString(), data: payload });
+  const isSlack = /hooks\.slack\.com/i.test(wh.url);
+  const isTeams = /webhook\.office\.com|outlook\.office\.com\/webhook/i.test(wh.url);
+  const body = isSlack
+    ? JSON.stringify(formatSlackPayload(event, payload))
+    : isTeams
+    ? JSON.stringify(formatTeamsPayload(event, payload))
+    : JSON.stringify({ event, timestamp: new Date().toISOString(), data: payload });
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     'X-Webhook-Event': event,
   };
-  if (wh.secret) {
+  if (wh.secret && !isSlack && !isTeams) {
     const sig = crypto.createHmac('sha256', wh.secret).update(body).digest('hex');
     headers['X-Webhook-Signature'] = `sha256=${sig}`;
   }
