@@ -10,6 +10,9 @@ import Team from './pages/Team/Team';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import StatusPage from './pages/Status/StatusPage';
+import Maintenance from './pages/Maintenance/Maintenance';
+import Templates from './pages/Templates/Templates';
+import Integrations from './pages/Integrations/Integrations';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -30,6 +33,9 @@ export default function App() {
           <Route path="team" element={<Team />} />
           <Route path="audit" element={<AuditLog />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="maintenance" element={<Maintenance />} />
+          <Route path="templates" element={<Templates />} />
+          <Route path="integrations" element={<Integrations />} />
         </Route>
       </Routes>
     </BrowserRouter>

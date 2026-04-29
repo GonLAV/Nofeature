@@ -22,6 +22,10 @@ import slaRoutes from './modules/sla/sla.routes';
 import auditRoutes from './modules/audit/audit.routes';
 import patternsRoutes from './modules/patterns/patterns.routes';
 import metricsRoutes from './modules/metrics/metrics.routes';
+import integrationsRoutes from './modules/integrations/integrations.routes';
+import maintenanceRoutes from './modules/maintenance/maintenance.routes';
+import templatesRoutes from './modules/templates/templates.routes';
+import severityRoutes from './modules/severity/severity.routes';
 
 const app = express();
 
@@ -86,6 +90,10 @@ app.use(`${API}/sla`,       slaRoutes);
 app.use(`${API}/audit`,     auditRoutes);
 app.use(`${API}/patterns`,  patternsRoutes);
 app.use(`${API}/metrics`,   metricsRoutes);
+app.use(`${API}/integrations`, integrationsRoutes);
+app.use(`${API}/maintenance`,  maintenanceRoutes);
+app.use(`${API}/templates`,    templatesRoutes);
+app.use(`${API}/severity`,     severityRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import api from '../../lib/api';
 import IncidentChat from '../../components/incident/IncidentChat';
+import IncidentLinks from '../../components/incident/IncidentLinks';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -153,6 +154,7 @@ export default function IncidentDetail() {
           </div>
         )}
       </div>
+      {id && <IncidentLinks incidentId={id} />}
       {id && <IncidentChat incidentId={id} />}
     </div>
   );
