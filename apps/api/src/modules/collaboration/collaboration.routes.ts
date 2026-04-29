@@ -36,7 +36,34 @@ router.post('/incidents/:id/comments', async (req: Request, res: Response, next:
        VALUES ($1,$2,$3,$4,$5) RETURNING *`,
       [req.user!.tenantId, req.params.id, req.user!.userId, b.body, b.is_internal ?? true]
     );
-    res.status(201).json({ success: true, data: rows[0] });
+    const comment = rows[0];
+
+    // Parse @mentions: match @username or @"first last"
+    const mentionTokens = new Set<string>();
+    const re = /@([a-zA-Z0-9_.+-]+)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(b.body)) !== null) mentionTokens.add(m[1].toLowerCase());
+
+    if (mentionTokens.size > 0) {
+      const tokens = Array.from(mentionTokens);
+      const mentionedUsers = await db.query(
+        `SELECT DISTINCT id FROM users
+          WHERE tenant_id = $1 AND deleted_at IS NULL
+            AND (LOWER(SPLIT_PART(email,'@',1)) = ANY($2)
+                 OR LOWER(REPLACE(name,' ','')) = ANY($2))`,
+        [req.user!.tenantId, tokens]
+      );
+      for (const u of mentionedUsers.rows) {
+        if (u.id === req.user!.userId) continue;
+        await db.query(
+          `INSERT INTO comment_mentions (tenant_id, comment_id, incident_id, mentioned_user_id, mentioned_by)
+           VALUES ($1,$2,$3,$4,$5)`,
+          [req.user!.tenantId, comment.id, req.params.id, u.id, req.user!.userId]
+        );
+      }
+    }
+
+    res.status(201).json({ success: true, data: comment });
   } catch (err) { next(err); }
 });
 

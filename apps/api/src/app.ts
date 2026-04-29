@@ -37,6 +37,7 @@ import presenceRoutes from './modules/presence/presence.routes';
 import docsRoutes from './modules/docs/docs.routes';
 import searchRoutes from './modules/incidents/incident.search.routes';
 import opsRoutes from './modules/ops/ops.routes';
+import mentionsRoutes from './modules/mentions/mentions.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
 const app = express();
@@ -115,6 +116,7 @@ app.use(`${API}`,              collaborationRoutes);
 app.use(`${API}`,              bulkRoutes);
 app.use(`${API}`,              searchRoutes);
 app.use(`${API}`,              opsRoutes);
+app.use(`${API}`,              mentionsRoutes);
 app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);

@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { Search as SearchIcon, Upload, Filter } from 'lucide-react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { Search as SearchIcon, Upload, Filter, Bookmark, Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
@@ -15,11 +15,13 @@ interface Result {
   commander_name: string | null;
 }
 interface Tag { id: string; name: string; color: string }
+interface SavedSearch { id: string; name: string; filters: any; created_at: string }
 
 const SEVS = ['P1','P2','P3','P4'] as const;
 const STATUSES = ['open','investigating','resolved','closed'] as const;
 
 export default function SearchPage() {
+  const qc = useQueryClient();
   const [q, setQ] = useState('');
   const [sevs, setSevs] = useState<string[]>([]);
   const [stats, setStats] = useState<string[]>([]);
@@ -28,11 +30,41 @@ export default function SearchPage() {
   const [to, setTo] = useState('');
   const [results, setResults] = useState<Result[] | null>(null);
   const [csvBusy, setCsvBusy] = useState(false);
+  const [saveName, setSaveName] = useState('');
 
   const { data: tags = [] } = useQuery<Tag[]>({
     queryKey: ['tags'],
     queryFn: () => api.get('/tags').then(r => r.data.data),
   });
+
+  const { data: saved = [] } = useQuery<SavedSearch[]>({
+    queryKey: ['saved-searches'],
+    queryFn: () => api.get('/saved-searches').then(r => r.data.data),
+  });
+
+  const saveSearch = useMutation({
+    mutationFn: () => api.post('/saved-searches', {
+      name: saveName.trim(),
+      filters: { q, severity: sevs, status: stats, tag_ids: tagIds, from, to },
+    }),
+    onSuccess: () => { setSaveName(''); qc.invalidateQueries({ queryKey: ['saved-searches'] }); toast.success('Saved'); },
+    onError: () => toast.error('Save failed'),
+  });
+
+  const deleteSaved = useMutation({
+    mutationFn: (id: string) => api.delete(`/saved-searches/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['saved-searches'] }),
+  });
+
+  const loadSaved = (s: SavedSearch) => {
+    const f = s.filters ?? {};
+    setQ(f.q ?? '');
+    setSevs(f.severity ?? []);
+    setStats(f.status ?? []);
+    setTagIds(f.tag_ids ?? []);
+    setFrom(f.from ?? '');
+    setTo(f.to ?? '');
+  };
 
   const search = useMutation({
     mutationFn: () => api.post('/incidents/search', {
@@ -139,7 +171,7 @@ export default function SearchPage() {
           </label>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap items-center">
           <button onClick={() => search.mutate()} disabled={search.isPending}
             className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded text-sm">
             {search.isPending ? 'Searching…' : 'Search'}
@@ -147,8 +179,33 @@ export default function SearchPage() {
           <button onClick={() => {
             setQ(''); setSevs([]); setStats([]); setTagIds([]); setFrom(''); setTo(''); setResults(null);
           }} className="border px-4 py-2 rounded text-sm">Reset</button>
+          <input value={saveName} onChange={e => setSaveName(e.target.value)}
+            placeholder="Save as…" className="border rounded px-2 py-2 text-sm flex-1 min-w-[160px]"/>
+          <button onClick={() => saveName.trim() && saveSearch.mutate()}
+            disabled={!saveName.trim() || saveSearch.isPending}
+            className="border px-3 py-2 rounded text-sm flex items-center gap-1 disabled:opacity-50">
+            <Bookmark size={14}/> Save
+          </button>
         </div>
       </div>
+
+      {saved.length > 0 && (
+        <div className="bg-white border rounded-xl p-3">
+          <div className="text-xs text-gray-500 mb-2">Saved searches</div>
+          <div className="flex gap-2 flex-wrap">
+            {saved.map(s => (
+              <div key={s.id} className="flex items-center gap-1 bg-gray-50 border rounded-full pl-3 pr-1 py-0.5">
+                <button onClick={() => loadSaved(s)}
+                  className="text-xs hover:underline">{s.name}</button>
+                <button onClick={() => deleteSaved.mutate(s.id)}
+                  className="p-0.5 text-gray-400 hover:text-red-500">
+                  <Trash2 size={11}/>
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {results && (
         <div className="bg-white border rounded-xl">

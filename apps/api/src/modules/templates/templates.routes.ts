@@ -55,4 +55,37 @@ router.delete('/:id', authorize('owner', 'admin', 'manager'), async (req: Reques
   } catch (err) { next(err); }
 });
 
+router.post('/:id/launch', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const overrides = z.object({
+      title: z.string().optional(),
+      severity: z.string().optional(),
+    }).parse(req.body ?? {});
+    const tpl = await db.query(
+      `SELECT * FROM incident_templates WHERE id = $1 AND tenant_id = $2 AND deleted_at IS NULL`,
+      [req.params.id, req.user!.tenantId]
+    );
+    if (!tpl.rows[0]) return res.status(404).json({ success: false, error: 'Template not found' });
+    const t = tpl.rows[0];
+    const title = overrides.title || t.default_title || t.name;
+    const description = t.default_description || t.description || '';
+    const severity = overrides.severity || t.default_severity || 'P3';
+    if (!['P1', 'P2', 'P3', 'P4'].includes(severity)) {
+      return res.status(400).json({ success: false, error: 'Invalid severity' });
+    }
+    const ins = await db.query(
+      `INSERT INTO incidents (tenant_id, title, description, severity, affected_systems, commander_id)
+       VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
+      [req.user!.tenantId, title, description, severity, t.default_systems ?? [], req.user!.userId]
+    );
+    await db.query(
+      `INSERT INTO audit_logs (tenant_id, user_id, action, resource, resource_id, metadata)
+       VALUES ($1,$2,'incident.from_template','incident',$3,$4)`,
+      [req.user!.tenantId, req.user!.userId, ins.rows[0].id,
+       JSON.stringify({ template_id: t.id, template_name: t.name })]
+    );
+    res.status(201).json({ success: true, data: ins.rows[0] });
+  } catch (err) { next(err); }
+});
+
 export default router;

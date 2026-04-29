@@ -55,14 +55,11 @@ export default function Templates() {
 
   const useTemplate = async (t: Template) => {
     try {
-      await api.post('/incidents', {
-        title: t.default_title || t.name,
-        description: t.default_description || '',
-        severity: t.default_severity || 'P3',
-        affected_systems: t.default_systems,
-      });
+      const r = await api.post(`/templates/${t.id}/launch`);
       toast.success('Incident created from template');
       qc.invalidateQueries({ queryKey: ['incidents'] });
+      const id = r.data?.data?.id;
+      if (id) window.location.assign(`/incidents/${id}`);
     } catch {
       toast.error('Failed to create incident');
     }
