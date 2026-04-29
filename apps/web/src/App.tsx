@@ -18,6 +18,7 @@ import OnCall from './pages/OnCall/OnCall';
 import Digest from './pages/Digest/Digest';
 import Escalations from './pages/Escalations/Escalations';
 import SearchPage from './pages/Search/Search';
+import Postmortems from './pages/Postmortems/Postmortems';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="escalations" element={<Escalations />} />
           <Route path="search" element={<SearchPage />} />
           <Route path="digest" element={<Digest />} />
+          <Route path="postmortems" element={<Postmortems />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

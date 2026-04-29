@@ -16,6 +16,7 @@ import PresenceIndicator from '../../components/incident/PresenceIndicator';
 import SlaBadge from '../../components/incident/SlaBadge';
 import ActionItemsPanel from '../../components/incident/ActionItemsPanel';
 import RelatedIncidentsPanel from '../../components/incident/RelatedIncidentsPanel';
+import PostmortemPanel from '../../components/incident/PostmortemPanel';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -176,6 +177,7 @@ export default function IncidentDetail() {
       {id && <CommentsPanel incidentId={id} />}
       {id && <ActionItemsPanel incidentId={id} />}
       {id && <RelatedIncidentsPanel incidentId={id} />}
+      {id && <PostmortemPanel incidentId={id} />}
       {id && <LinkedIncidentsPanel incidentId={id} />}
       {id && incident && (
         <CustomerImpactPanel

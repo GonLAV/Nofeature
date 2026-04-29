@@ -68,6 +68,9 @@ export default function Layout() {
           <NavLink to="/search" className={navClass}>
             <Search size={16} /> Search
           </NavLink>
+          <NavLink to="/postmortems" className={navClass}>
+            <FileText size={16} /> Postmortems
+          </NavLink>
           <NavLink to="/settings" className={navClass}>
             <SettingsIcon size={16} /> Settings
           </NavLink>
