@@ -92,7 +92,7 @@ export default function Settings() {
       {/* API Keys */}
       <section className="bg-white border rounded-xl p-5 space-y-3">
         <h2 className="font-semibold flex items-center gap-2"><Key size={16}/> API Keys</h2>
-        <p className="text-xs text-gray-500">Service tokens for programmatic access. Use header <code className="text-xs bg-gray-100 px-1 rounded">Authorization: Bearer &lt;key&gt;</code>.</p>
+        <p className="text-xs text-gray-500">Service tokens for programmatic access. Use header <code className="text-xs bg-gray-100 px-1 rounded">Authorization: Bearer &lt;key&gt;</code>. <a href="/api/v1/docs" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">View API docs ↗</a></p>
         <div className="flex gap-2">
           <input className="flex-1 border rounded px-3 py-2 text-sm" placeholder="Key name (e.g. CI Pipeline)"
             value={newKeyName} onChange={e => setNewKeyName(e.target.value)}/>

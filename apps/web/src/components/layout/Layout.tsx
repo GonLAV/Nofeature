@@ -1,11 +1,14 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search } from 'lucide-react';
+import { useThemeStore } from '../../store/theme.store';
 import CommandPalette from './CommandPalette';
 import { useAuthStore } from '../../store/auth.store';
 import toast from 'react-hot-toast';
 
 export default function Layout() {
   const { user, logout } = useAuthStore();
+  const theme = useThemeStore((s) => s.theme);
+  const toggleTheme = useThemeStore((s) => s.toggle);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -61,6 +64,9 @@ export default function Layout() {
           <NavLink to="/escalations" className={navClass}>
             <Bell size={16} /> Escalations
           </NavLink>
+          <NavLink to="/search" className={navClass}>
+            <Search size={16} /> Search
+          </NavLink>
           <NavLink to="/settings" className={navClass}>
             <SettingsIcon size={16} /> Settings
           </NavLink>
@@ -78,6 +84,10 @@ export default function Layout() {
           <button onClick={handleLogout}
             className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-gray-600 hover:bg-gray-100 transition-colors">
             <LogOut size={14} /> Sign out
+          </button>
+          <button onClick={toggleTheme}
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:bg-gray-100 transition-colors mt-1">
+            {theme === 'dark' ? <Sun size={12}/> : <Moon size={12}/>} {theme === 'dark' ? 'Light' : 'Dark'} mode
           </button>
         </div>
       </aside>

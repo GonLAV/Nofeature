@@ -34,6 +34,8 @@ import collaborationRoutes from './modules/collaboration/collaboration.routes';
 import escalationRoutes from './modules/escalations/escalations.routes';
 import bulkRoutes from './modules/bulk/bulk.routes';
 import presenceRoutes from './modules/presence/presence.routes';
+import docsRoutes from './modules/docs/docs.routes';
+import searchRoutes from './modules/incidents/incident.search.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
 const app = express();
@@ -110,7 +112,9 @@ app.use(`${API}/oncall`,       oncallRoutes);
 app.use(`${API}/escalations`, escalationRoutes);
 app.use(`${API}`,              collaborationRoutes);
 app.use(`${API}`,              bulkRoutes);
+app.use(`${API}`,              searchRoutes);
 app.use(`${API}/presence`,     presenceRoutes);
+app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
