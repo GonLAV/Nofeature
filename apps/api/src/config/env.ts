@@ -21,6 +21,12 @@ const envSchema = z.object({
   RATE_LIMIT_WINDOW_MS:    z.string().default('60000').transform(Number),
   RATE_LIMIT_MAX_REQUESTS: z.string().default('100').transform(Number),
   ENCRYPTION_KEY:          z.string().min(32),
+  STRIPE_SECRET_KEY:       z.string().startsWith('sk_').optional(),
+  STRIPE_WEBHOOK_SECRET:   z.string().startsWith('whsec_').optional(),
+  STRIPE_PRICE_STARTER:    z.string().optional(),
+  STRIPE_PRICE_GROWTH:     z.string().optional(),
+  STRIPE_PRICE_ENTERPRISE: z.string().optional(),
+  APP_URL:                 z.string().default('http://localhost:3000'),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -64,4 +70,14 @@ export const config = {
     maxRequests: env.RATE_LIMIT_MAX_REQUESTS,
   },
   encryptionKey: env.ENCRYPTION_KEY,
+  stripe: {
+    secretKey:       env.STRIPE_SECRET_KEY ?? '',
+    webhookSecret:   env.STRIPE_WEBHOOK_SECRET ?? '',
+    prices: {
+      starter:    env.STRIPE_PRICE_STARTER ?? '',
+      growth:     env.STRIPE_PRICE_GROWTH ?? '',
+      enterprise: env.STRIPE_PRICE_ENTERPRISE ?? '',
+    },
+  },
+  appUrl: env.APP_URL,
 };

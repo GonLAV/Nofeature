@@ -17,6 +17,7 @@ import userRoutes from './modules/users/user.routes';
 import tenantRoutes from './modules/tenants/tenant.routes';
 import aiRoutes from './modules/ai/ai.routes';
 import warRoomRoutes from './modules/warroom/warroom.routes';
+import billingRoutes, { webhookHandler } from './modules/billing/billing.routes';
 
 const app = express();
 
@@ -40,6 +41,14 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
 }));
+
+// ── Stripe Webhook (raw body MUST be registered before express.json()) ─────
+// Stripe signature verification requires the original unmodified request body.
+app.post(
+  `/api/${config.apiVersion}/billing/webhook`,
+  express.raw({ type: 'application/json' }),
+  webhookHandler,
+);
 
 // ── Body Parsing ────────────────────────────────────────────
 app.use(express.json({ limit: '1mb' }));
@@ -76,6 +85,7 @@ app.use(`${API}/users`,     userRoutes);
 app.use(`${API}/tenants`,   tenantRoutes);
 app.use(`${API}/ai`,        aiRoutes);
 app.use(`${API}/warroom`,   warRoomRoutes);
+app.use(`${API}/billing`,   billingRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);
