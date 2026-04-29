@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import api from '../../lib/api';
 import { useAuthStore } from '../../store/auth.store';
 import toast from 'react-hot-toast';
+import CommentReactions from './CommentReactions';
 
 interface Comment {
   id: string;
@@ -64,6 +65,7 @@ export default function CommentsPanel({ incidentId }: { incidentId: string }) {
               )}
             </div>
             <div className="text-sm mt-2 whitespace-pre-wrap">{c.body}</div>
+            <CommentReactions commentId={c.id} />
           </div>
         ))}
       </div>
