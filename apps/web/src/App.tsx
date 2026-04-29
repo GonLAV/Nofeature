@@ -13,6 +13,8 @@ import StatusPage from './pages/Status/StatusPage';
 import Maintenance from './pages/Maintenance/Maintenance';
 import Templates from './pages/Templates/Templates';
 import Integrations from './pages/Integrations/Integrations';
+import Settings from './pages/Settings/Settings';
+import OnCall from './pages/OnCall/OnCall';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -36,6 +38,8 @@ export default function App() {
           <Route path="maintenance" element={<Maintenance />} />
           <Route path="templates" element={<Templates />} />
           <Route path="integrations" element={<Integrations />} />
+          <Route path="oncall" element={<OnCall />} />
+          <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
     </BrowserRouter>

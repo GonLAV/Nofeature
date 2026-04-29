@@ -26,6 +26,11 @@ import integrationsRoutes from './modules/integrations/integrations.routes';
 import maintenanceRoutes from './modules/maintenance/maintenance.routes';
 import templatesRoutes from './modules/templates/templates.routes';
 import severityRoutes from './modules/severity/severity.routes';
+import apiKeyRoutes from './modules/apikeys/apikeys.routes';
+import securityRoutes from './modules/security/security.routes';
+import webhookRoutes from './modules/webhooks/webhooks.routes';
+import oncallRoutes from './modules/oncall/oncall.routes';
+import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
 const app = express();
 
@@ -94,6 +99,11 @@ app.use(`${API}/integrations`, integrationsRoutes);
 app.use(`${API}/maintenance`,  maintenanceRoutes);
 app.use(`${API}/templates`,    templatesRoutes);
 app.use(`${API}/severity`,     severityRoutes);
+app.use(`${API}/api-keys`,     apiKeyRoutes);
+app.use(`${API}/security`,     securityRoutes);
+app.use(`${API}/webhooks`,     webhookRoutes);
+app.use(`${API}/oncall`,       oncallRoutes);
+app.use(`${API}`,              incidentExtrasRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

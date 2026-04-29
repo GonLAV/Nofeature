@@ -6,6 +6,8 @@ import { formatDistanceToNow } from 'date-fns';
 import api from '../../lib/api';
 import IncidentChat from '../../components/incident/IncidentChat';
 import IncidentLinks from '../../components/incident/IncidentLinks';
+import SimilarIncidents from '../../components/incident/SimilarIncidents';
+import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -155,6 +157,14 @@ export default function IncidentDetail() {
         )}
       </div>
       {id && <IncidentLinks incidentId={id} />}
+      {id && incident && (
+        <CustomerImpactPanel
+          incidentId={id}
+          customers_affected={incident.customers_affected}
+          revenue_impact_usd={incident.revenue_impact_usd}
+        />
+      )}
+      {id && <SimilarIncidents incidentId={id} />}
       {id && <IncidentChat incidentId={id} />}
     </div>
   );
