@@ -30,6 +30,17 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 // Authenticated routes below
 router.use(authenticate);
 
+router.get('/me', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT id, name, slug, is_active, created_at FROM tenants WHERE id = $1 LIMIT 1',
+      [req.user!.tenantId]
+    );
+    if (rows.length === 0) return res.status(404).json({ success: false, error: 'not found' });
+    res.json({ success: true, data: rows[0] });
+  } catch (err) { next(err); }
+});
+
 router.get('/', authorize('admin', 'owner'), async (_req: Request, res: Response, next: NextFunction) => {
   try {
     const { rows } = await db.query('SELECT id, name, slug, created_at FROM tenants ORDER BY created_at DESC');

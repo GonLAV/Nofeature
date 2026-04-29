@@ -102,4 +102,123 @@ router.get('/status/:slug', async (req: Request, res: Response, next: NextFuncti
   }
 });
 
+// Public: tiny status badge JSON for embed widget
+// GET /api/v1/public/status/:slug/badge.json
+router.get('/status/:slug/badge.json', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const tenantRes = await db.query(
+      `SELECT id, name FROM tenants WHERE slug=$1 AND is_active=true LIMIT 1`,
+      [req.params.slug]
+    );
+    if (tenantRes.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'not found' });
+    }
+    const tenant = tenantRes.rows[0];
+    const a = await db.query(
+      `SELECT severity FROM incidents
+        WHERE tenant_id=$1 AND status IN ('open','investigating','monitoring')
+          AND deleted_at IS NULL`,
+      [tenant.id]
+    );
+    const overall =
+      a.rows.some((i: any) => i.severity === 'P1') ? 'major_outage'
+      : a.rows.some((i: any) => i.severity === 'P2') ? 'partial_outage'
+      : a.rows.length > 0 ? 'degraded'
+      : 'operational';
+    res.set('Cache-Control', 'public, max-age=60');
+    res.json({
+      success: true,
+      data: { tenant: tenant.name, overall, active: a.rows.length, updated_at: new Date().toISOString() },
+    });
+  } catch (err) { next(err); }
+});
+
+// Public: subscribe to email updates
+// POST /api/v1/public/status/:slug/subscribe { email }
+router.post('/status/:slug/subscribe', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const email = String(req.body?.email ?? '').trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return res.status(400).json({ success: false, error: 'invalid email' });
+    }
+    const t = await db.query(
+      `SELECT id FROM tenants WHERE slug=$1 AND is_active=true LIMIT 1`,
+      [req.params.slug]
+    );
+    if (t.rows.length === 0) return res.status(404).json({ success: false, error: 'not found' });
+
+    const r = await db.query(
+      `INSERT INTO status_subscribers (tenant_id, email)
+         VALUES ($1, $2)
+         ON CONFLICT (tenant_id, email) DO UPDATE SET email = EXCLUDED.email
+         RETURNING confirm_token, confirmed`,
+      [t.rows[0].id, email]
+    );
+    return res.json({
+      success: true,
+      data: { ok: true, already_confirmed: r.rows[0].confirmed, confirm_token: r.rows[0].confirm_token },
+    });
+  } catch (err) { next(err); }
+});
+
+// Public: confirm subscription
+// GET /api/v1/public/status/subscribe/confirm?token=...
+router.get('/status/subscribe/confirm', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = String(req.query.token ?? '');
+    const r = await db.query(
+      `UPDATE status_subscribers
+          SET confirmed=true, confirmed_at=NOW()
+        WHERE confirm_token=$1 AND confirmed=false
+        RETURNING id`,
+      [token]
+    );
+    if (r.rowCount === 0) return res.status(400).json({ success: false, error: 'invalid or used token' });
+    return res.json({ success: true, data: { confirmed: true } });
+  } catch (err) { next(err); }
+});
+
+// Public: unsubscribe
+// GET /api/v1/public/status/subscribe/unsubscribe?token=...
+router.get('/status/subscribe/unsubscribe', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = String(req.query.token ?? '');
+    const r = await db.query(
+      `DELETE FROM status_subscribers WHERE unsubscribe_token=$1`,
+      [token]
+    );
+    if (r.rowCount === 0) return res.status(400).json({ success: false, error: 'invalid token' });
+    return res.json({ success: true, data: { unsubscribed: true } });
+  } catch (err) { next(err); }
+});
+
+// Public: embed widget JS — drop-in <script src="…/status/:slug/embed.js" data-target="#status"></script>
+router.get('/status/:slug/embed.js', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const slug = req.params.slug;
+    const proto = (req.headers['x-forwarded-proto'] as string) || req.protocol;
+    const host = req.headers['x-forwarded-host'] || req.headers.host;
+    const base = `${proto}://${host}/api/v1/public/status/${encodeURIComponent(slug)}`;
+    const js = `(function(){
+  var COLOR={operational:"#10b981",degraded:"#f59e0b",partial_outage:"#ef4444",major_outage:"#dc2626"};
+  var LABEL={operational:"All systems operational",degraded:"Degraded performance",partial_outage:"Partial outage",major_outage:"Major outage"};
+  function render(d, host){
+    var c=COLOR[d.overall]||"#6b7280", l=LABEL[d.overall]||d.overall;
+    host.innerHTML='<a href="'+location.origin+'/status/${slug}" target="_blank" style="display:inline-flex;align-items:center;gap:.5rem;padding:.4rem .75rem;border-radius:.4rem;font:500 13px system-ui,sans-serif;color:#fff;background:'+c+';text-decoration:none">'
+      +'<span style="display:inline-block;width:.55rem;height:.55rem;border-radius:50%;background:#fff"></span>'
+      +'<span>'+l+(d.active?' ('+d.active+')':'')+'</span></a>';
+  }
+  function init(){
+    var sel=(document.currentScript&&document.currentScript.getAttribute("data-target"))||"#status-badge";
+    var host=document.querySelector(sel); if(!host) return;
+    fetch(${JSON.stringify(base)}+"/badge.json").then(function(r){return r.json()}).then(function(j){if(j&&j.data) render(j.data, host)}).catch(function(){});
+  }
+  if(document.readyState==="loading"){document.addEventListener("DOMContentLoaded",init)}else{init()}
+})();`;
+    res.set('Content-Type', 'application/javascript; charset=utf-8');
+    res.set('Cache-Control', 'public, max-age=300');
+    res.send(js);
+  } catch (err) { next(err); }
+});
+
 export default router;

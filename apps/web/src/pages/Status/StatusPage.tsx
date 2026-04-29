@@ -150,9 +150,58 @@ export default function StatusPage() {
         </section>
 
         <footer className="text-center text-xs text-gray-400 mt-12">
-          Powered by Incident War Room AI
+          <SubscribeBox slug={slug!} />
+          <div className="mt-6">Powered by Incident War Room AI</div>
         </footer>
       </div>
+    </div>
+  );
+}
+
+function SubscribeBox({ slug }: { slug: string }) {
+  const [email, setEmail] = useState('');
+  const [state, setState] = useState<'idle' | 'sending' | 'ok' | 'err'>('idle');
+  const [msg, setMsg] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setState('sending');
+    try {
+      const apiBase = (import.meta.env.VITE_API_URL || '/api/v1').replace(/\/$/, '');
+      const r = await axios.post(`${apiBase}/public/status/${slug}/subscribe`, { email });
+      setState('ok');
+      setMsg(r.data?.data?.already_confirmed ? 'You are already subscribed.' : 'Check your email to confirm.');
+      setEmail('');
+    } catch (e: any) {
+      setState('err');
+      setMsg(e?.response?.data?.error || 'Failed to subscribe');
+    }
+  };
+
+  return (
+    <div className="bg-white border rounded-lg p-5 text-left">
+      <h3 className="font-semibold text-gray-900 text-sm">Subscribe to updates</h3>
+      <p className="text-xs text-gray-500 mt-1">Get notified by email when incidents open or resolve.</p>
+      <form onSubmit={submit} className="mt-3 flex gap-2">
+        <input
+          type="email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          placeholder="you@example.com"
+          className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm"
+        />
+        <button
+          type="submit"
+          disabled={state === 'sending'}
+          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm disabled:opacity-50"
+        >
+          Subscribe
+        </button>
+      </form>
+      {msg && (
+        <p className={`text-xs mt-2 ${state === 'ok' ? 'text-green-600' : 'text-red-600'}`}>{msg}</p>
+      )}
     </div>
   );
 }

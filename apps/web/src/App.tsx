@@ -22,6 +22,7 @@ import Postmortems from './pages/Postmortems/Postmortems';
 import Board from './pages/Board/Board';
 import Services from './pages/Services/Services';
 import Inbox from './pages/Inbox/Inbox';
+import StatusEmbed from './pages/Settings/StatusEmbed';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="board" element={<Board />} />
           <Route path="services" element={<Services />} />
           <Route path="inbox" element={<Inbox />} />
+          <Route path="status-embed" element={<StatusEmbed />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>
