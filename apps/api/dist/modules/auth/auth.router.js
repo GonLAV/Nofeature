@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authRouter = void 0;
+const express_1 = require("express");
+const database_1 = require("../../config/database");
+const userRepository_1 = require("../../database/repositories/userRepository");
+const tenantRepository_1 = require("../../database/repositories/tenantRepository");
+const auth_service_1 = require("./auth.service");
+const auth_controller_1 = require("./auth.controller");
+const auth_1 = require("../../middleware/auth");
+const rateLimiter_1 = require("../../middleware/rateLimiter");
+const router = (0, express_1.Router)();
+exports.authRouter = router;
+const userRepo = new userRepository_1.UserRepository(database_1.pool);
+const tenantRepo = new tenantRepository_1.TenantRepository(database_1.pool);
+const authService = new auth_service_1.AuthService(userRepo, tenantRepo);
+const authController = new auth_controller_1.AuthController(authService);
+router.post('/register', rateLimiter_1.authLimiter, authController.register);
+router.post('/login', rateLimiter_1.authLimiter, authController.login);
+router.post('/refresh', rateLimiter_1.authLimiter, authController.refresh);
+router.post('/logout', authController.logout);
+router.get('/me', auth_1.authenticate, authController.me);
+//# sourceMappingURL=auth.router.js.map

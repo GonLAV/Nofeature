@@ -1,0 +1,20 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.usersRouter = void 0;
+const express_1 = require("express");
+const database_1 = require("../../config/database");
+const userRepository_1 = require("../../database/repositories/userRepository");
+const users_service_1 = require("./users.service");
+const users_controller_1 = require("./users.controller");
+const auth_1 = require("../../middleware/auth");
+const router = (0, express_1.Router)();
+exports.usersRouter = router;
+const userRepo = new userRepository_1.UserRepository(database_1.pool);
+const usersService = new users_service_1.UsersService(userRepo);
+const usersController = new users_controller_1.UsersController(usersService);
+router.use(auth_1.authenticate);
+router.get('/', usersController.list);
+router.get('/:id', usersController.getById);
+router.patch('/:id/role', (0, auth_1.requireRole)('admin'), usersController.updateRole);
+router.delete('/:id', (0, auth_1.requireRole)('admin'), usersController.deactivate);
+//# sourceMappingURL=users.router.js.map

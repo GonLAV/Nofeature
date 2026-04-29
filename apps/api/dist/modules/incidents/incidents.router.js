@@ -1,0 +1,23 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.incidentsRouter = void 0;
+const express_1 = require("express");
+const database_1 = require("../../config/database");
+const incidentRepository_1 = require("../../database/repositories/incidentRepository");
+const incidents_service_1 = require("./incidents.service");
+const incidents_controller_1 = require("./incidents.controller");
+const auth_1 = require("../../middleware/auth");
+const router = (0, express_1.Router)();
+exports.incidentsRouter = router;
+const incidentRepo = new incidentRepository_1.IncidentRepository(database_1.pool);
+const incidentsService = new incidents_service_1.IncidentsService(incidentRepo);
+const incidentsController = new incidents_controller_1.IncidentsController(incidentsService);
+router.use(auth_1.authenticate);
+router.get('/', incidentsController.list);
+router.post('/', incidentsController.create);
+router.get('/:id', incidentsController.getById);
+router.patch('/:id/status', (0, auth_1.requireRole)('member'), incidentsController.updateStatus);
+router.patch('/:id/commander', (0, auth_1.requireRole)('admin'), incidentsController.updateCommander);
+router.get('/:id/timeline', incidentsController.getTimeline);
+router.delete('/:id', (0, auth_1.requireRole)('admin'), incidentsController.delete);
+//# sourceMappingURL=incidents.router.js.map
