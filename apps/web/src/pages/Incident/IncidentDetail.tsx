@@ -20,6 +20,8 @@ import PostmortemPanel from '../../components/incident/PostmortemPanel';
 import WatchButton from '../../components/incident/WatchButton';
 import IncidentServices from '../../components/incident/IncidentServices';
 import StatusUpdatesPanel from '../../components/incident/StatusUpdatesPanel';
+import CloneButton from '../../components/incident/CloneButton';
+import SlashCommandBar from '../../components/incident/SlashCommandBar';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -178,6 +180,8 @@ export default function IncidentDetail() {
       {id && <div><WatchButton incidentId={id} /></div>}
       {id && <IncidentServices incidentId={id} />}
       {id && <StatusUpdatesPanel incidentId={id} />}
+      {id && <SlashCommandBar incidentId={id} />}
+      {id && <div><CloneButton incidentId={id} /></div>}
       {id && <PresenceIndicator incidentId={id} />}
       {id && <TagsPanel incidentId={id} />}
       {id && <CommentsPanel incidentId={id} />}
