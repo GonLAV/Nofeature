@@ -19,6 +19,7 @@ import RelatedIncidentsPanel from '../../components/incident/RelatedIncidentsPan
 import PostmortemPanel from '../../components/incident/PostmortemPanel';
 import WatchButton from '../../components/incident/WatchButton';
 import IncidentServices from '../../components/incident/IncidentServices';
+import StatusUpdatesPanel from '../../components/incident/StatusUpdatesPanel';
 
 const STATUS_OPTIONS = ['open', 'investigating', 'resolved', 'closed'];
 
@@ -176,6 +177,7 @@ export default function IncidentDetail() {
       {id && <SlaBadge incidentId={id} canAck={!incident.acknowledged_at && incident.status !== 'closed'} onAcknowledge={() => ackMutation.mutate()}/>}
       {id && <div><WatchButton incidentId={id} /></div>}
       {id && <IncidentServices incidentId={id} />}
+      {id && <StatusUpdatesPanel incidentId={id} />}
       {id && <PresenceIndicator incidentId={id} />}
       {id && <TagsPanel incidentId={id} />}
       {id && <CommentsPanel incidentId={id} />}

@@ -42,6 +42,7 @@ import postmortemsRoutes from './modules/postmortems/postmortems.routes';
 import watchersRoutes from './modules/watchers/watchers.routes';
 import reactionsRoutes from './modules/reactions/reactions.routes';
 import servicesRoutes from './modules/services/services.routes';
+import statusUpdatesRoutes from './modules/status-updates/status-updates.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
 const app = express();
@@ -125,6 +126,7 @@ app.use(`${API}`,              postmortemsRoutes);
 app.use(`${API}`,              watchersRoutes);
 app.use(`${API}`,              reactionsRoutes);
 app.use(`${API}`,              servicesRoutes);
+app.use(`${API}`,              statusUpdatesRoutes);
 app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);

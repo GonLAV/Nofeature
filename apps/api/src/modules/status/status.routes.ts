@@ -30,6 +30,29 @@ router.get('/status/:slug', async (req: Request, res: Response, next: NextFuncti
       [tenant.id]
     );
 
+    // Attach latest stakeholder updates per active incident
+    const activeIds = activeRes.rows.map((i: any) => i.id);
+    let updatesByIncident: Record<string, any[]> = {};
+    if (activeIds.length > 0) {
+      const upRes = await db.query(
+        `SELECT incident_id, status, body, posted_at
+           FROM incident_status_updates
+          WHERE tenant_id = $1 AND incident_id = ANY($2::uuid[])
+          ORDER BY posted_at DESC`,
+        [tenant.id, activeIds]
+      );
+      for (const u of upRes.rows) {
+        (updatesByIncident[u.incident_id] ||= []).push({
+          status: u.status,
+          body: u.body,
+          posted_at: u.posted_at,
+        });
+      }
+      for (const inc of activeRes.rows as any[]) {
+        inc.updates = (updatesByIncident[inc.id] || []).slice(0, 10);
+      }
+    }
+
     // Recent history (last 90 days, resolved/closed)
     const historyRes = await db.query(
       `SELECT id, title, severity, status, created_at, resolved_at
