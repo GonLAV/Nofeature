@@ -4,6 +4,77 @@ import { NotFoundError } from '../../utils/errors';
 
 const router = Router();
 
+// ── Public read-only incident share link ──────────────────────
+// GET /api/v1/public/share/:token
+router.get('/share/:token', async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const token = req.params.token;
+    const link = await db.query(
+      `SELECT * FROM incident_share_links WHERE token=$1`,
+      [token]
+    );
+    if (link.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'invalid link' });
+    }
+    const l = link.rows[0];
+    if (l.revoked_at) {
+      return res.status(410).json({ success: false, error: 'link revoked' });
+    }
+    if (l.expires_at && new Date(l.expires_at).getTime() < Date.now()) {
+      return res.status(410).json({ success: false, error: 'link expired' });
+    }
+
+    const inc = await db.query(
+      `SELECT i.id, i.incident_number, i.title, i.description, i.severity, i.status,
+              i.created_at, i.acknowledged_at, i.resolved_at, i.affected_systems,
+              t.name AS tenant_name
+       FROM incidents i
+       JOIN tenants t ON t.id = i.tenant_id
+       WHERE i.id=$1 AND i.deleted_at IS NULL`,
+      [l.incident_id]
+    );
+    if (inc.rows.length === 0) {
+      return res.status(404).json({ success: false, error: 'incident not found' });
+    }
+
+    let updates: any[] = [];
+    try {
+      const u = await db.query(
+        `SELECT id, status, body, posted_at FROM incident_status_updates
+         WHERE incident_id=$1 ORDER BY posted_at DESC LIMIT 50`,
+        [l.incident_id]
+      );
+      updates = u.rows;
+    } catch {}
+
+    let timeline: any[] = [];
+    try {
+      const t = await db.query(
+        `SELECT event_type, description, created_at FROM incident_timeline
+         WHERE incident_id=$1 ORDER BY created_at DESC LIMIT 100`,
+        [l.incident_id]
+      );
+      timeline = t.rows;
+    } catch {}
+
+    db.query(
+      `UPDATE incident_share_links SET view_count = view_count + 1, last_viewed_at = NOW() WHERE id=$1`,
+      [l.id]
+    ).catch(() => {});
+
+    res.set('Cache-Control', 'public, max-age=15');
+    res.json({
+      success: true,
+      data: {
+        incident: inc.rows[0],
+        status_updates: updates,
+        timeline,
+        expires_at: l.expires_at,
+      },
+    });
+  } catch (e) { next(e); }
+});
+
 /**
  * Public status page endpoint — no auth.
  * GET /api/v1/public/status/:slug

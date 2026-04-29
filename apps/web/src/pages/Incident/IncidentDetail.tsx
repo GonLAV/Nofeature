@@ -21,6 +21,7 @@ import WatchButton from '../../components/incident/WatchButton';
 import IncidentServices from '../../components/incident/IncidentServices';
 import StatusUpdatesPanel from '../../components/incident/StatusUpdatesPanel';
 import IncidentLinksPanel from '../../components/incident/IncidentLinksPanel';
+import ShareLinksPanel from '../../components/incident/ShareLinksPanel';
 import CloneButton from '../../components/incident/CloneButton';
 import SlashCommandBar from '../../components/incident/SlashCommandBar';
 
@@ -182,6 +183,7 @@ export default function IncidentDetail() {
       {id && <IncidentServices incidentId={id} />}
       {id && <StatusUpdatesPanel incidentId={id} />}
       {id && <IncidentLinksPanel incidentId={id} />}
+      {id && <ShareLinksPanel incidentId={id} />}
       {id && <SlashCommandBar incidentId={id} />}
       {id && <div><CloneButton incidentId={id} /></div>}
       {id && <PresenceIndicator incidentId={id} />}

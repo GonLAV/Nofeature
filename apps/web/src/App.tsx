@@ -23,6 +23,7 @@ import Board from './pages/Board/Board';
 import Services from './pages/Services/Services';
 import Inbox from './pages/Inbox/Inbox';
 import StatusEmbed from './pages/Settings/StatusEmbed';
+import SharedIncident from './pages/Share/SharedIncident';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/login"    element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/status/:slug" element={<StatusPage />} />
+        <Route path="/share/:token" element={<SharedIncident />} />
         <Route path="/" element={<PrivateRoute><Layout /></PrivateRoute>}>
           <Route index element={<Dashboard />} />
           <Route path="incidents/:id" element={<IncidentDetail />} />
