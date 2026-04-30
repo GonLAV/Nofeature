@@ -52,7 +52,7 @@ router.get('/treasury/accounts/:id/ledger', async (req: Request, res: Response, 
   } catch (err) { next(err); }
 });
 
-router.post('/treasury/accounts/:id/withdraw', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/treasury/accounts/:id/withdraw', authorize('member', 'manager', 'admin', 'owner'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const parsed = txSchema.safeParse(req.body);
     if (!parsed.success) throw new ValidationError({ body: parsed.error.issues.map((i) => i.message) });

@@ -1,16 +1,32 @@
+/**
+ * Reliability Treasury \u2014 service layer.
+ *
+ * Hardening notes:
+ *  - applyTx uses db.transaction + SELECT ... FOR UPDATE so concurrent
+ *    withdrawals against the same account cannot lose updates.
+ *  - The ledger row records the *actual* delta applied (after clamping to
+ *    zero) so the ledger always reconciles to balance.
+ *  - listAccounts/dashboard fetch ledger entries in one batched query
+ *    (no N+1).
+ *  - All writes verify tenant ownership; cross-tenant incidentId is
+ *    rejected before any FK check runs.
+ */
+
 import db from '../../config/database';
+import { logger } from '../../utils/logger';
 import { NotFoundError, ValidationError } from '../../utils/errors';
+import type { PoolClient } from 'pg';
 import {
   budgetMinutes,
   summariseAccount,
   TREASURY_SCHEMA_VERSION,
-  type LedgerEntry,
   type LedgerKind,
   type TreasuryAccountView,
 } from './treasury.score';
 
 interface AccountRow {
   id:               string;
+  tenant_id:        string;
   service_name:     string;
   slo_target:       number;
   window_days:      number;
@@ -35,6 +51,8 @@ export interface AccountSummary extends AccountRow {
   view: TreasuryAccountView;
 }
 
+const BURN_WINDOW_DAYS = 30;
+
 export class TreasuryService {
   async createAccount(opts: {
     tenantId:     string;
@@ -55,6 +73,9 @@ export class TreasuryService {
           opts.windowDays, budget, TREASURY_SCHEMA_VERSION,
         ],
       );
+      logger.info('treasury.account.created', {
+        tenantId: opts.tenantId, serviceName: opts.serviceName, budget,
+      });
       return rows[0] as AccountRow;
     } catch (err) {
       const e = err as { code?: string };
@@ -66,30 +87,44 @@ export class TreasuryService {
   }
 
   async listAccounts(tenantId: string): Promise<AccountSummary[]> {
-    const { rows } = await db.query(
+    const { rows: accountRows } = await db.query(
       `SELECT * FROM treasury_accounts
         WHERE tenant_id = $1
         ORDER BY service_name`,
       [tenantId],
     );
-    const accounts = rows as AccountRow[];
-    const summaries: AccountSummary[] = [];
-    for (const a of accounts) {
-      const entries = await this.recentEntries(a.id, 30);
-      summaries.push({
-        ...a,
-        view: summariseAccount({
-          budget:  a.budget_minutes,
-          balance: a.balance_minutes,
-          entries: entries.map((e) => ({
-            kind:      e.kind,
-            minutes:   e.minutes,
-            createdAt: e.created_at,
-          })),
-        }),
-      });
+    const accounts = accountRows as AccountRow[];
+    if (accounts.length === 0) return [];
+
+    const accountIds = accounts.map((a) => a.id);
+    const { rows: ledgerRows } = await db.query(
+      `SELECT account_id, kind, minutes, created_at
+         FROM treasury_ledger
+        WHERE account_id = ANY($1::uuid[])
+          AND created_at >= NOW() - make_interval(days => $2::int)
+        ORDER BY created_at DESC`,
+      [accountIds, BURN_WINDOW_DAYS],
+    );
+    type SlimEntry = Pick<LedgerRow, 'account_id' | 'kind' | 'minutes' | 'created_at'>;
+    const grouped = new Map<string, SlimEntry[]>();
+    for (const e of ledgerRows as SlimEntry[]) {
+      const arr = grouped.get(e.account_id) ?? [];
+      arr.push(e);
+      grouped.set(e.account_id, arr);
     }
-    return summaries;
+
+    return accounts.map((a) => ({
+      ...a,
+      view: summariseAccount({
+        budget:  a.budget_minutes,
+        balance: a.balance_minutes,
+        entries: (grouped.get(a.id) ?? []).map((e) => ({
+          kind:      e.kind,
+          minutes:   e.minutes,
+          createdAt: e.created_at,
+        })),
+      }),
+    }));
   }
 
   async getAccount(tenantId: string, accountId: string): Promise<AccountSummary> {
@@ -99,13 +134,20 @@ export class TreasuryService {
     );
     if (rows.length === 0) throw new NotFoundError('Treasury account not found');
     const a = rows[0] as AccountRow;
-    const entries = await this.recentEntries(a.id, 30);
+    const { rows: entries } = await db.query(
+      `SELECT kind, minutes, created_at FROM treasury_ledger
+        WHERE account_id = $1
+          AND created_at >= NOW() - make_interval(days => $2::int)
+        ORDER BY created_at DESC`,
+      [a.id, BURN_WINDOW_DAYS],
+    );
+    type SlimEntry = Pick<LedgerRow, 'kind' | 'minutes' | 'created_at'>;
     return {
       ...a,
       view: summariseAccount({
         budget:  a.budget_minutes,
         balance: a.balance_minutes,
-        entries: entries.map((e) => ({
+        entries: (entries as SlimEntry[]).map((e) => ({
           kind:      e.kind,
           minutes:   e.minutes,
           createdAt: e.created_at,
@@ -115,7 +157,12 @@ export class TreasuryService {
   }
 
   async ledger(tenantId: string, accountId: string, limit = 50): Promise<LedgerRow[]> {
-    await this.getAccount(tenantId, accountId); // tenant guard
+    const { rowCount } = await db.query(
+      `SELECT 1 FROM treasury_accounts WHERE id = $1 AND tenant_id = $2`,
+      [accountId, tenantId],
+    );
+    if (!rowCount) throw new NotFoundError('Treasury account not found');
+
     const safe = Math.min(500, Math.max(1, limit));
     const { rows } = await db.query(
       `SELECT * FROM treasury_ledger
@@ -127,64 +174,92 @@ export class TreasuryService {
     return rows as LedgerRow[];
   }
 
-  async withdraw(opts: {
-    tenantId:    string;
-    accountId:   string;
-    actorId:     string;
-    minutes:     number;
-    incidentId?: string;
-    note?:       string;
-  }): Promise<AccountSummary> {
-    return this.applyTx({ ...opts, kind: 'withdrawal', signedMinutes: -Math.abs(opts.minutes) });
+  async withdraw(opts: TxOpts): Promise<AccountSummary> {
+    return this.applyTx(opts, 'withdrawal');
   }
 
-  async deposit(opts: {
-    tenantId:    string;
-    accountId:   string;
-    actorId:     string;
-    minutes:     number;
-    incidentId?: string;
-    note?:       string;
-  }): Promise<AccountSummary> {
-    return this.applyTx({ ...opts, kind: 'deposit', signedMinutes: Math.abs(opts.minutes) });
+  async deposit(opts: TxOpts): Promise<AccountSummary> {
+    return this.applyTx(opts, 'deposit');
   }
 
-  private async applyTx(opts: {
-    tenantId:      string;
-    accountId:     string;
-    actorId:       string;
-    kind:          LedgerKind;
-    signedMinutes: number;
-    incidentId?:   string;
-    note?:         string;
-  }): Promise<AccountSummary> {
-    const account = await this.getAccount(opts.tenantId, opts.accountId);
-    const newBalance = Math.max(0, account.balance_minutes + opts.signedMinutes);
+  /**
+   * Atomic balance update.
+   *
+   *   1. Open a transaction.
+   *   2. SELECT FOR UPDATE on the row, scoped to the tenant.
+   *   3. Compute the actual delta (clamped so balance never goes negative).
+   *   4. UPDATE the balance and INSERT a ledger row recording the *applied* delta.
+   *
+   * Concurrent transactions block on the row lock and serialize correctly.
+   */
+  private async applyTx(opts: TxOpts, kind: LedgerKind): Promise<AccountSummary> {
+    if (!Number.isFinite(opts.minutes) || opts.minutes <= 0) {
+      throw new ValidationError({ minutes: ['Must be a positive number'] });
+    }
 
-    await db.query('BEGIN');
-    try {
-      await db.query(
+    if (opts.incidentId) {
+      const { rowCount } = await db.query(
+        `SELECT 1 FROM incidents WHERE id = $1 AND tenant_id = $2`,
+        [opts.incidentId, opts.tenantId],
+      );
+      if (!rowCount) {
+        throw new ValidationError({ incidentId: ['Incident not found in this tenant'] });
+      }
+    }
+
+    const desiredDelta = kind === 'withdrawal'
+      ? -Math.abs(opts.minutes)
+      :  Math.abs(opts.minutes);
+
+    const updated = await db.transaction(async (client: PoolClient) => {
+      const { rows } = await client.query<AccountRow>(
+        `SELECT * FROM treasury_accounts
+          WHERE id = $1 AND tenant_id = $2
+          FOR UPDATE`,
+        [opts.accountId, opts.tenantId],
+      );
+      if (rows.length === 0) throw new NotFoundError('Treasury account not found');
+      const account = rows[0];
+
+      // Clamp at zero. The ledger records the actual delta applied so it
+      // always reconciles to the new balance.
+      const newBalance   = Math.max(0, account.balance_minutes + desiredDelta);
+      const appliedDelta = newBalance - account.balance_minutes;
+
+      if (appliedDelta === 0) {
+        // No-op (e.g. withdrawing from an already-zero balance). Still
+        // record the attempt for audit, but with zero minutes.
+        logger.warn('treasury.tx.noop', {
+          tenantId: opts.tenantId, accountId: opts.accountId, kind,
+          requested: desiredDelta,
+        });
+      }
+
+      await client.query(
         `INSERT INTO treasury_ledger
            (tenant_id, account_id, kind, minutes, incident_id, note, actor_id, schema_version)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
         [
-          opts.tenantId, opts.accountId, opts.kind,
-          opts.signedMinutes, opts.incidentId ?? null,
+          opts.tenantId, opts.accountId, kind,
+          appliedDelta, opts.incidentId ?? null,
           opts.note ?? null, opts.actorId, TREASURY_SCHEMA_VERSION,
         ],
       );
-      await db.query(
+      const { rows: updatedRows } = await client.query<AccountRow>(
         `UPDATE treasury_accounts
             SET balance_minutes = $1,
                 updated_at      = NOW()
-          WHERE id = $2 AND tenant_id = $3`,
+          WHERE id = $2 AND tenant_id = $3
+          RETURNING *`,
         [newBalance, opts.accountId, opts.tenantId],
       );
-      await db.query('COMMIT');
-    } catch (err) {
-      await db.query('ROLLBACK');
-      throw err;
-    }
+      return updatedRows[0];
+    });
+
+    logger.info('treasury.tx.applied', {
+      tenantId: opts.tenantId, accountId: opts.accountId, kind,
+      requested: opts.minutes, balance: updated.balance_minutes,
+    });
 
     return this.getAccount(opts.tenantId, opts.accountId);
   }
@@ -199,26 +274,30 @@ export class TreasuryService {
     cautionCount: number;
   }> {
     const accounts = await this.listAccounts(tenantId);
-    const totalBudget  = accounts.reduce((s, a) => s + a.budget_minutes, 0);
-    const totalBalance = accounts.reduce((s, a) => s + a.balance_minutes, 0);
-    const totalBurn    = accounts.reduce((s, a) => s + a.view.burn, 0);
-    const finiteRunways = accounts
-      .map((a) => a.view.runway)
-      .filter((r) => Number.isFinite(r));
-    const worstRunway = finiteRunways.length ? Math.min(...finiteRunways) : null;
-    const freezeCount  = accounts.filter((a) => a.view.recommendation === 'freeze').length;
-    const cautionCount = accounts.filter((a) => a.view.recommendation === 'caution').length;
+    let totalBudget = 0, totalBalance = 0, totalBurn = 0;
+    let freezeCount = 0, cautionCount = 0;
+    let worstRunway: number | null = null;
+
+    for (const a of accounts) {
+      totalBudget  += a.budget_minutes;
+      totalBalance += a.balance_minutes;
+      totalBurn    += a.view.burn;
+      if (a.view.recommendation === 'freeze')  freezeCount++;
+      if (a.view.recommendation === 'caution') cautionCount++;
+      if (Number.isFinite(a.view.runway)) {
+        worstRunway = worstRunway === null ? a.view.runway : Math.min(worstRunway, a.view.runway);
+      }
+    }
+
     return { accounts, totalBudget, totalBalance, totalBurn, worstRunway, freezeCount, cautionCount };
   }
+}
 
-  private async recentEntries(accountId: string, days: number): Promise<LedgerRow[]> {
-    const { rows } = await db.query(
-      `SELECT * FROM treasury_ledger
-        WHERE account_id = $1
-          AND created_at >= NOW() - ($2 || ' days')::interval
-        ORDER BY created_at DESC`,
-      [accountId, String(days)],
-    );
-    return rows as LedgerRow[];
-  }
+export interface TxOpts {
+  tenantId:    string;
+  accountId:   string;
+  actorId:     string;
+  minutes:     number;
+  incidentId?: string;
+  note?:       string;
 }

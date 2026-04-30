@@ -43,3 +43,7 @@ CREATE INDEX IF NOT EXISTS idx_treasury_ledger_account
 
 CREATE INDEX IF NOT EXISTS idx_treasury_ledger_tenant_recent
   ON treasury_ledger (tenant_id, created_at DESC);
+
+CREATE INDEX IF NOT EXISTS idx_treasury_ledger_incident
+  ON treasury_ledger (incident_id)
+  WHERE incident_id IS NOT NULL;
