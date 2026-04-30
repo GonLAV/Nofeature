@@ -13,17 +13,21 @@ import {
  * lexical match alone wouldn't have chosen first.
  */
 const CANDIDATE_FANOUT = 50;
+const MAX_QUERY_TOKENS = 40;
 
 const sanitiseQuery = (raw: string): string => {
   // Strip Postgres tsquery operators that could change the meaning of the
   // search and inject extra terms. We then re-tokenise on whitespace and
   // join with " | " (OR) so the user's words behave like a free-text query.
   const cleaned = raw.replace(/[!&|()\\:'"<>~*]/g, ' ').trim();
-  const tokens = cleaned.split(/\s+/).filter((t) => t.length >= 2 && t.length <= 80);
+  const tokens = cleaned
+    .split(/\s+/)
+    .filter((t) => t.length >= 2 && t.length <= 80);
   if (tokens.length === 0) {
     throw new ValidationError({ q: ['Query must contain searchable text'] });
   }
-  return tokens.map((t) => t.toLowerCase()).join(' | ');
+  // Cap tokens defensively — long descriptions can blow up to_tsquery.
+  return tokens.slice(0, MAX_QUERY_TOKENS).map((t) => t.toLowerCase()).join(' | ');
 };
 
 export class DoppelgangersService {
@@ -55,7 +59,7 @@ export class DoppelgangersService {
               ) @@ to_tsquery('simple', $2)
         ORDER BY rank DESC, created_at DESC
         LIMIT $4`,
-      [opts.tenantId, tsquery, opts.excludeIncidentId ?? null, CANDIDATE_FANOUT],
+      [opts.tenantId, tsquery, opts.excludeIncidentId ?? null, Math.max(CANDIDATE_FANOUT, opts.limit * 3)],
     );
 
     const candidates: DoppelgangerCandidate[] = rows.map((r: any) => ({
