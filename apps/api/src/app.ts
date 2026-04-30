@@ -3,13 +3,16 @@ import helmet from 'helmet';
 import cors from 'cors';
 import compression from 'compression';
 import morgan from 'morgan';
-import { v4 as uuidv4 } from 'uuid';
 
 import { config } from './config/env';
 import { logger } from './utils/logger';
+import db from './config/database';
+import redis from './config/redis';
 import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import { apiLimiter } from './middleware/rateLimiter';
+import { requestContextMiddleware } from './middleware/requestContext';
+import healthRoutes from './modules/health/health.routes';
 
 import authRoutes from './modules/auth/auth.routes';
 import incidentRoutes from './modules/incidents/incident.routes';
@@ -96,27 +99,24 @@ app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(compression());
 
-// ── Correlation ID Middleware ───────────────────────────────
-app.use((req, res, next) => {
-  const correlationId = (req.headers['x-correlation-id'] as string) || uuidv4();
-  req.headers['x-correlation-id'] = correlationId;
-  res.setHeader('X-Correlation-ID', correlationId);
-  next();
-});
+// ── Correlation ID + Request Context (AsyncLocalStorage) ────
+// Wraps every request in an ALS scope so every log line emitted
+// downstream auto-carries correlationId / userId / tenantId / route.
+app.use(requestContextMiddleware);
 
 // ── Request Logging ─────────────────────────────────────────
 app.use(morgan('combined', {
   stream: { write: (msg) => logger.http(msg.trim()) },
-  skip: (req) => req.url === '/health',
+  skip: (req) => req.url === '/health' || req.url === '/livez' || req.url === '/readyz',
 }));
 
 // ── Rate Limiting ───────────────────────────────────────────
 app.use('/api/', apiLimiter);
 
-// ── Health Check ────────────────────────────────────────────
-app.get('/health', (_req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString(), version: config.apiVersion });
-});
+// ── Health / Liveness / Readiness ───────────────────────────
+// Mounted at root (no /api/v1 prefix) so probes don't have to
+// hard-code an API version.
+app.use(healthRoutes);
 
 // ── API Routes ──────────────────────────────────────────────
 const API = `/api/${config.apiVersion}`;
@@ -164,10 +164,84 @@ app.use(`${API}`,              incidentExportRoutes);
 app.use(notFound);
 app.use(errorHandler);
 
-// ── Start Server ────────────────────────────────────────────
-const PORT = config.port;
-app.listen(PORT, () => {
-  logger.info(`🚀 Incident War Room API running on port ${PORT} [${config.nodeEnv}]`);
+// ── Process-level safety nets ───────────────────────────────
+// One forgotten `await` shouldn't silently kill the process. Log it
+// loudly so the platform / pager picks it up. We don't auto-exit on
+// `unhandledRejection` (Node 15+ default would) so a single buggy
+// route can't take down the whole pod.
+process.on('unhandledRejection', (reason) => {
+  logger.error('UNHANDLED_REJECTION', {
+    reason: reason instanceof Error ? reason.message : String(reason),
+    stack:  reason instanceof Error ? reason.stack   : undefined,
+  });
 });
+process.on('uncaughtException', (err) => {
+  // Truly broken state — log and let the supervisor restart us.
+  logger.error('UNCAUGHT_EXCEPTION', { error: err.message, stack: err.stack });
+  // Give the logger a moment to flush, then exit.
+  setTimeout(() => process.exit(1), 250).unref();
+});
+
+// ── Start Server (with graceful shutdown) ───────────────────
+const PORT = config.port;
+
+// Skip listen() under Jest so test imports don't bind a port.
+const server =
+  config.nodeEnv === 'test'
+    ? null
+    : app.listen(PORT, () => {
+        logger.info(
+          `🚀 Incident War Room API running on port ${PORT} [${config.nodeEnv}]`,
+        );
+      });
+
+/**
+ * Graceful shutdown:
+ *   1. stop accepting new connections (server.close)
+ *   2. drain in-flight requests (default keep-alive timeout window)
+ *   3. close DB pool + Redis client
+ *   4. exit
+ *
+ * On a second signal, hard-exit (Kubernetes will SIGKILL after
+ * terminationGracePeriodSeconds anyway, but be a good citizen).
+ */
+let shuttingDown = false;
+async function shutdown(signal: string): Promise<void> {
+  if (shuttingDown) {
+    logger.warn(`Received ${signal} during shutdown — forcing exit`);
+    process.exit(1);
+  }
+  shuttingDown = true;
+  logger.info(`Received ${signal} — starting graceful shutdown`);
+
+  const deadline = setTimeout(() => {
+    logger.error('Graceful shutdown timed out — forcing exit');
+    process.exit(1);
+  }, 15_000).unref();
+
+  try {
+    if (server) {
+      await new Promise<void>((resolve, reject) =>
+        server.close((err) => (err ? reject(err) : resolve())),
+      );
+      logger.info('HTTP server closed');
+    }
+    // Best-effort dependency teardown. Failures here are logged but
+    // don't block exit — we're already shutting down.
+    await Promise.allSettled([
+      redis.quit().then(() => logger.info('Redis disconnected')),
+      db.query('SELECT 1').catch(() => undefined), // no public pool.end yet; placeholder
+    ]);
+    clearTimeout(deadline);
+    logger.info('Shutdown complete');
+    process.exit(0);
+  } catch (err) {
+    logger.error('Error during shutdown', { error: (err as Error).message });
+    process.exit(1);
+  }
+}
+
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT',  () => void shutdown('SIGINT'));
 
 export default app;

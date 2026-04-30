@@ -1,9 +1,34 @@
 import winston from 'winston';
 import { config } from '../config/env';
+import { getContext } from './requestContext';
 
 const { combine, timestamp, json, colorize, printf, errors } = winston.format;
 
+/**
+ * Mixes the active request context (correlationId, userId, tenantId,
+ * route, ...) into every log line. Lives at the format layer so it
+ * wraps *every* call site without code changes.
+ *
+ * Falls back to a no-op when called outside an HTTP request (e.g. at
+ * server boot, or from a worker), so general-purpose logging still
+ * works.
+ */
+const contextFormat = winston.format((info) => {
+  const ctx = getContext();
+  if (!ctx) return info;
+  return {
+    ...info,
+    correlationId: ctx.correlationId,
+    ...(ctx.userId    ? { userId:    ctx.userId    } : {}),
+    ...(ctx.tenantId  ? { tenantId:  ctx.tenantId  } : {}),
+    ...(ctx.role      ? { role:      ctx.role      } : {}),
+    ...(ctx.method    ? { method:    ctx.method    } : {}),
+    ...(ctx.route     ? { route:     ctx.route     } : {}),
+  };
+});
+
 const devFormat = combine(
+  contextFormat(),
   colorize(),
   timestamp({ format: 'HH:mm:ss' }),
   errors({ stack: true }),
@@ -16,6 +41,7 @@ const devFormat = combine(
 );
 
 const prodFormat = combine(
+  contextFormat(),
   timestamp(),
   errors({ stack: true }),
   json()

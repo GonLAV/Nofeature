@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/env';
 import { UnauthorizedError, ForbiddenError } from '../utils/errors';
+import { bindIdentityToContext } from './requestContext';
 
 export interface JwtPayload {
   userId: string;
@@ -31,6 +32,7 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction) =
       algorithms: ['HS256'],
     }) as JwtPayload;
     req.user = payload;
+    bindIdentityToContext(payload);
     next();
   } catch (err) {
     if (err instanceof jwt.TokenExpiredError) throw new UnauthorizedError('Token expired');
@@ -50,9 +52,11 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
   if (!header?.startsWith('Bearer ')) return next();
   try {
     const token = header.split(' ')[1];
-    req.user = jwt.verify(token, config.jwt.accessSecret, {
+    const payload = jwt.verify(token, config.jwt.accessSecret, {
       algorithms: ['HS256'],
     }) as JwtPayload;
+    req.user = payload;
+    bindIdentityToContext(payload);
   } catch { /* ignore */ }
   next();
 };
