@@ -297,6 +297,36 @@ export class DnaService {
 
   // -------- Mitigation Memory --------
 
+  /** Group raw rows by mitigation and run them through the pure scorer. */
+  private rankMitigations(
+    rows: Array<{
+      id: string; slug: string; label: string; description: string | null;
+      effective: boolean | null; mttr_delta_seconds: number | null;
+    }>,
+  ): MemoryEntry[] {
+    const byMit = new Map<string, { meta: TaxonomyRow; apps: MitigationApplication[] }>();
+    for (const r of rows) {
+      const slot = byMit.get(r.id) ?? {
+        meta: { id: r.id, slug: r.slug, label: r.label, description: r.description } as TaxonomyRow,
+        apps: [] as MitigationApplication[],
+      };
+      slot.apps.push({
+        effective:        r.effective,
+        mttrDeltaSeconds: r.mttr_delta_seconds,
+      });
+      byMit.set(r.id, slot);
+    }
+    const out: MemoryEntry[] = [];
+    for (const slot of byMit.values()) {
+      out.push({ mitigation: slot.meta, stats: summariseMitigation(slot.apps) });
+    }
+    out.sort((a, b) =>
+      b.stats.successLowerBound - a.stats.successLowerBound ||
+      b.stats.sampleSize        - a.stats.sampleSize,
+    );
+    return out;
+  }
+
   /**
    * For a given failure mode, summarise every mitigation that has ever been
    * applied to incidents tagged with that mode, ranked by Wilson lower bound
@@ -331,27 +361,43 @@ export class DnaService {
       [opts.tenantId, fm.rows[0].id, opts.windowDays, MAX_HISTORY_ROWS],
     );
 
-    const byMit = new Map<string, { meta: TaxonomyRow; apps: MitigationApplication[] }>();
-    for (const r of rows) {
-      const slot = byMit.get(r.id) ?? {
-        meta: { id: r.id, slug: r.slug, label: r.label, description: r.description } as TaxonomyRow,
-        apps: [] as MitigationApplication[],
-      };
-      slot.apps.push({
-        effective:        r.effective,
-        mttrDeltaSeconds: r.mttr_delta_seconds,
-      });
-      byMit.set(r.id, slot);
-    }
+    return this.rankMitigations(rows);
+  }
 
-    const out: MemoryEntry[] = [];
-    for (const slot of byMit.values()) {
-      out.push({ mitigation: slot.meta, stats: summariseMitigation(slot.apps) });
-    }
-    out.sort((a, b) =>
-      b.stats.successLowerBound - a.stats.successLowerBound ||
-      b.stats.sampleSize        - a.stats.sampleSize,
+  /**
+   * The killer endpoint: given a NEW incident with one or more failure-mode
+   * tags, surface the mitigations that have historically worked best on
+   * incidents sharing ANY of those tags. This is what turns past postmortems
+   * into actionable advice in the middle of a live incident.
+   */
+  async recommendForIncident(opts: {
+    tenantId: string;
+    incidentId: string;
+    windowDays: number;
+  }): Promise<MemoryEntry[]> {
+    await ensureIncidentInTenant(opts.tenantId, opts.incidentId);
+
+    const { rows } = await db.query(
+      `WITH this_modes AS (
+         SELECT failure_mode_id
+           FROM incident_failure_modes
+          WHERE tenant_id = $1 AND incident_id = $2
+       )
+       SELECT m.id, m.slug, m.label, m.description,
+              im.effective, im.mttr_delta_seconds
+         FROM incident_failure_modes ifm
+         JOIN incident_mitigations im
+           ON im.tenant_id = ifm.tenant_id
+          AND im.incident_id = ifm.incident_id
+         JOIN mitigations m ON m.id = im.mitigation_id
+        WHERE ifm.tenant_id = $1
+          AND ifm.incident_id <> $2
+          AND ifm.failure_mode_id IN (SELECT failure_mode_id FROM this_modes)
+          AND im.created_at >= NOW() - make_interval(days => $3::int)
+        LIMIT $4`,
+      [opts.tenantId, opts.incidentId, opts.windowDays, MAX_HISTORY_ROWS],
     );
-    return out;
+
+    return this.rankMitigations(rows).slice(0, 10);
   }
 }

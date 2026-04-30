@@ -30,3 +30,7 @@ export const memoryQuerySchema = z.object({
   failureModeSlug: z.string().trim().regex(SLUG_RE),
   windowDays:      z.coerce.number().int().min(7).max(730).default(365),
 });
+
+export const recommendQuerySchema = z.object({
+  windowDays:      z.coerce.number().int().min(7).max(730).default(365),
+});

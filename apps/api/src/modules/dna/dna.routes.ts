@@ -1,4 +1,4 @@
-import { Router, Request, Response, NextFunction } from 'express';
+import { Router } from 'express';
 import { z } from 'zod';
 import { authenticate, authorize } from '../../middleware/auth';
 import { ValidationError } from '../../utils/errors';
@@ -8,6 +8,7 @@ import {
   tagFailureModeSchema,
   applyMitigationSchema,
   memoryQuerySchema,
+  recommendQuerySchema,
 } from './dna.schema';
 
 const router = Router();
@@ -133,6 +134,18 @@ router.get('/dna/memory', async (req, res, next) => {
   try {
     const q = parseOrThrow(memoryQuerySchema, req.query);
     const data = await service.memoryFor({ tenantId: req.user!.tenantId, ...q });
+    res.json({ success: true, data });
+  } catch (e) { next(e); }
+});
+
+router.get('/incidents/:id/dna/recommendations', async (req, res, next) => {
+  try {
+    const q = parseOrThrow(recommendQuerySchema, req.query);
+    const data = await service.recommendForIncident({
+      tenantId: req.user!.tenantId,
+      incidentId: req.params.id,
+      windowDays: q.windowDays,
+    });
     res.json({ success: true, data });
   } catch (e) { next(e); }
 });
