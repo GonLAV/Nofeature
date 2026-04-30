@@ -12,6 +12,9 @@
     "test:integration": "jest tests/integration",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit",
+    "audit:deps": "npm audit --omit=dev --audit-level=high",
+    "audit:secrets": "node -e \"const fs=require('fs'),path=require('path'),pat=/(AKIA[0-9A-Z]{16}|ghp_[A-Za-z0-9]{36}|sk-[A-Za-z0-9]{20,}|-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----)/;function w(d){for(const f of fs.readdirSync(d,{withFileTypes:true})){if(['node_modules','dist','coverage','.git'].includes(f.name))continue;const p=path.join(d,f.name);if(f.isDirectory())w(p);else if(/\\.(ts|tsx|js|json|env|yml|yaml)$/.test(f.name)){const s=fs.readFileSync(p,'utf8');if(pat.test(s)){console.error('SECRET in '+p);process.exitCode=1;}}}}w('src');console.log(process.exitCode?'\u274c secrets detected':'\u2705 no secrets');\"",
+    "security": "npm run audit:secrets && npm run audit:deps",
     "migrate": "node migrate.js"
   },
   "dependencies": {

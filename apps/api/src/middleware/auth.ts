@@ -26,7 +26,10 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction) =
 
   const token = header.split(' ')[1];
   try {
-    const payload = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
+    // Pin algorithms to defeat "alg=none" / RS256→HS256 confusion attacks (OWASP A02/A07).
+    const payload = jwt.verify(token, config.jwt.accessSecret, {
+      algorithms: ['HS256'],
+    }) as JwtPayload;
     req.user = payload;
     next();
   } catch (err) {
@@ -47,7 +50,9 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
   if (!header?.startsWith('Bearer ')) return next();
   try {
     const token = header.split(' ')[1];
-    req.user = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
+    req.user = jwt.verify(token, config.jwt.accessSecret, {
+      algorithms: ['HS256'],
+    }) as JwtPayload;
   } catch { /* ignore */ }
   next();
 };

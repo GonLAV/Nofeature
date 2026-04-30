@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Plus, AlertTriangle, CheckCircle, Clock, Zap, X, Tag as TagIcon, UserPlus } from 'lucide-react';
+import { Plus, AlertTriangle, CheckCircle, Clock, Zap, X, Tag as TagIcon, UserPlus, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import api from '../../lib/api';
 import SlaWidget from '../../components/incident/SlaWidget';
 import MyActionItems from '../../components/dashboard/MyActionItems';
 import WatchingWidget from '../../components/dashboard/WatchingWidget';
 import SavedFiltersBar, { applyFilter, IncidentFilter } from '../../components/dashboard/SavedFiltersBar';
+import ExportMenu from '../../components/dashboard/ExportMenu';
 
 const SEVERITY_COLORS: Record<string, string> = {
   P1: 'bg-red-100 text-red-800 border-red-200',
@@ -98,10 +99,13 @@ export default function Dashboard() {
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-xl font-semibold">Active Incidents</h1>
-        <button onClick={() => setShowCreate(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
-          <Plus size={16} /> New Incident
-        </button>
+        <div className="flex items-center gap-2">
+          <ExportMenu filter={filter} />
+          <button onClick={() => setShowCreate(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-medium">
+            <Plus size={16} /> New Incident
+          </button>
+        </div>
       </div>
 
       {/* Bulk action bar */}

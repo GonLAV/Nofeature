@@ -49,7 +49,9 @@ export class AuthService {
   async refreshTokens(refreshToken: string) {
     let payload: JwtPayload;
     try {
-      payload = jwt.verify(refreshToken, config.jwt.refreshSecret) as JwtPayload;
+      payload = jwt.verify(refreshToken, config.jwt.refreshSecret, {
+        algorithms: ['HS256'],
+      }) as JwtPayload;
     } catch {
       throw new UnauthorizedError('Invalid refresh token');
     }
@@ -83,11 +85,13 @@ export class AuthService {
 
     const accessToken = jwt.sign(payload, config.jwt.accessSecret, {
       expiresIn: config.jwt.accessExpiresIn,
+      algorithm: 'HS256',
       jwtid: uuidv4(),
     } as SignOptions);
 
     const refreshToken = jwt.sign(payload, config.jwt.refreshSecret, {
       expiresIn: config.jwt.refreshExpiresIn,
+      algorithm: 'HS256',
       jwtid: uuidv4(),
     } as SignOptions);
 

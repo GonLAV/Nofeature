@@ -49,6 +49,7 @@ import incidentShareRoutes from './modules/incidents/incident-share.routes';
 import savedFiltersRoutes from './modules/saved-filters/saved-filters.routes';
 import inboxRoutes from './modules/inbox/inbox.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
+import incidentExportRoutes from './modules/incidents/incident-export.routes';
 
 const app = express();
 
@@ -66,8 +67,25 @@ app.use(helmet({
 }));
 
 // ── CORS ────────────────────────────────────────────────────
+// Strict origin allow-list. Comma-separated list in CORS_ORIGIN.
+// Refuses wildcard "*" when credentials are enabled (OWASP A05).
+const corsOrigins = String(config.corsOrigin)
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
+if (corsOrigins.includes('*') && config.isProduction) {
+  logger.error('Refusing to start: CORS_ORIGIN="*" with credentials in production');
+  process.exit(1);
+}
+
 app.use(cors({
-  origin: config.corsOrigin,
+  origin: (origin, cb) => {
+    // Allow same-origin / server-to-server (no Origin header).
+    if (!origin) return cb(null, true);
+    if (corsOrigins.includes('*') || corsOrigins.includes(origin)) return cb(null, true);
+    return cb(new Error(`CORS: origin '${origin}' not allowed`));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Correlation-ID'],
@@ -140,6 +158,7 @@ app.use(`${API}`,              inboxRoutes);
 app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);
+app.use(`${API}`,              incidentExportRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);
