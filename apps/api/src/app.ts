@@ -46,6 +46,7 @@ import statusUpdatesRoutes from './modules/status-updates/status-updates.routes'
 import incidentActionsRoutes from './modules/incidents/incident-actions.routes';
 import incidentLinksRoutes from './modules/incidents/incident-links.routes';
 import incidentShareRoutes from './modules/incidents/incident-share.routes';
+import savedFiltersRoutes from './modules/saved-filters/saved-filters.routes';
 import inboxRoutes from './modules/inbox/inbox.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 
@@ -134,6 +135,7 @@ app.use(`${API}`,              statusUpdatesRoutes);
 app.use(`${API}`,              incidentActionsRoutes);
 app.use(`${API}`,              incidentLinksRoutes);
 app.use(`${API}`,              incidentShareRoutes);
+app.use(`${API}`,              savedFiltersRoutes);
 app.use(`${API}`,              inboxRoutes);
 app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              docsRoutes);

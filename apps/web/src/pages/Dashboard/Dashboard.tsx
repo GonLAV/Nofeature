@@ -6,6 +6,7 @@ import api from '../../lib/api';
 import SlaWidget from '../../components/incident/SlaWidget';
 import MyActionItems from '../../components/dashboard/MyActionItems';
 import WatchingWidget from '../../components/dashboard/WatchingWidget';
+import SavedFiltersBar, { applyFilter, IncidentFilter } from '../../components/dashboard/SavedFiltersBar';
 
 const SEVERITY_COLORS: Record<string, string> = {
   P1: 'bg-red-100 text-red-800 border-red-200',
@@ -27,6 +28,7 @@ export default function Dashboard() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkAction, setBulkAction] = useState<'close' | 'severity' | null>(null);
   const [bulkSev, setBulkSev] = useState<'P1' | 'P2' | 'P3' | 'P4'>('P2');
+  const [filter, setFilter] = useState<IncidentFilter>({});
 
   const toggleSel = (id: string) => {
     setSelected(prev => {
@@ -66,8 +68,9 @@ export default function Dashboard() {
   });
 
   const incidents = data?.incidents ?? [];
-  const open = incidents.filter((i: { status: string }) => i.status === 'open').length;
-  const investigating = incidents.filter((i: { status: string }) => i.status === 'investigating').length;
+  const filtered = applyFilter(incidents as any[], filter);
+  const open = filtered.filter((i: { status: string }) => i.status === 'open').length;
+  const investigating = filtered.filter((i: { status: string }) => i.status === 'investigating').length;
 
   return (
     <div className="p-6 max-w-6xl mx-auto">
@@ -86,9 +89,11 @@ export default function Dashboard() {
         </div>
         <div className="bg-white rounded-xl border p-4 flex items-center gap-3">
           <div className="p-2 bg-purple-50 rounded-lg"><Zap className="text-purple-500" size={20} /></div>
-          <div><div className="text-2xl font-semibold">{incidents.length}</div><div className="text-sm text-gray-500">Total</div></div>
+          <div><div className="text-2xl font-semibold">{filtered.length}</div><div className="text-sm text-gray-500">Total</div></div>
         </div>
       </div>
+
+      <SavedFiltersBar filter={filter} onChange={setFilter} />
 
       {/* Header */}
       <div className="flex justify-between items-center mb-4">
@@ -125,9 +130,13 @@ export default function Dashboard() {
           <CheckCircle size={32} className="mx-auto mb-2 text-green-400" />
           <p>No active incidents 🎉</p>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="text-center py-12 text-gray-400 bg-white rounded-xl border">
+          <p>No incidents match your filters.</p>
+        </div>
       ) : (
         <div className="space-y-2">
-          {incidents.map((incident: { id: string; severity: string; title: string; status: string; created_at: string; ai_root_cause?: string }) => (
+          {filtered.map((incident: { id: string; severity: string; title: string; status: string; created_at: string; ai_root_cause?: string }) => (
             <div key={incident.id}
               className={`block bg-white rounded-xl border p-4 hover:border-gray-300 hover:shadow-sm transition-all flex items-start gap-3 ${selected.has(incident.id) ? 'ring-2 ring-blue-300' : ''}`}>
               <input type="checkbox" className="mt-1" checked={selected.has(incident.id)}
