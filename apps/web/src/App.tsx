@@ -19,6 +19,7 @@ import Digest from './pages/Digest/Digest';
 import Escalations from './pages/Escalations/Escalations';
 import SearchPage from './pages/Search/Search';
 import Postmortems from './pages/Postmortems/Postmortems';
+import Promises from './pages/Promises/Promises';
 import Board from './pages/Board/Board';
 import Services from './pages/Services/Services';
 import Inbox from './pages/Inbox/Inbox';
@@ -53,6 +54,7 @@ export default function App() {
           <Route path="search" element={<SearchPage />} />
           <Route path="digest" element={<Digest />} />
           <Route path="postmortems" element={<Postmortems />} />
+          <Route path="promises" element={<Promises />} />
           <Route path="board" element={<Board />} />
           <Route path="services" element={<Services />} />
           <Route path="inbox" element={<Inbox />} />
