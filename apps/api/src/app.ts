@@ -57,6 +57,7 @@ import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 import genomeRoutes from './modules/genome/genome.routes';
 import promiseRoutes from './modules/promises/promise.routes';
 import calibrationRoutes from './modules/calibration/calibration.routes';
+import doppelgangersRoutes from './modules/doppelgangers/doppelgangers.routes';
 import dnaRoutes from './modules/dna/dna.routes';
 import incidentExportRoutes from './modules/incidents/incident-export.routes';
 
@@ -185,6 +186,7 @@ app.use(`${API}`,              incidentExtrasRoutes);
 app.use(`${API}`,              genomeRoutes);
 app.use(`${API}`,              promiseRoutes);
 app.use(`${API}`,              calibrationRoutes);
+app.use(`${API}`,              doppelgangersRoutes);
 app.use(`${API}`,              dnaRoutes);
 app.use(`${API}`,              incidentExportRoutes);
 
