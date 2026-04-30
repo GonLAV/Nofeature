@@ -64,6 +64,29 @@ export default function ConfidenceGradient({ incidentId }: { incidentId: string 
   const s = stats.data;
   const trend = s && s.slopePerMinute > 0 ? <TrendingUp className="text-emerald-400" /> : <TrendingDown className="text-rose-400" />;
 
+  const sparkline = (() => {
+    const pts = readings.data ?? [];
+    if (pts.length < 2) return null;
+    const t0 = new Date(pts[0].recordedAt).getTime();
+    const tN = new Date(pts[pts.length - 1].recordedAt).getTime();
+    const span = Math.max(1, tN - t0);
+    const W = 600;
+    const H = 80;
+    const path = pts
+      .map((p, i) => {
+        const x = ((new Date(p.recordedAt).getTime() - t0) / span) * W;
+        const y = H - p.confidence * H;
+        return `${i === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      })
+      .join(' ');
+    return (
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-20 bg-zinc-950 border border-zinc-800 rounded">
+        <path d={`${path} L ${W} ${H} L 0 ${H} Z`} fill="rgba(99,102,241,0.18)" />
+        <path d={path} stroke="rgb(129,140,248)" strokeWidth={1.5} fill="none" />
+      </svg>
+    );
+  })();
+
   return (
     <section className="space-y-4">
       <header className="flex items-center gap-2">
@@ -91,6 +114,8 @@ export default function ConfidenceGradient({ incidentId }: { incidentId: string 
           <div className="text-2xl font-bold">{s?.inflections.length ?? 0}</div>
         </div>
       </div>
+
+      {sparkline}
 
       <form
         onSubmit={(e) => {
