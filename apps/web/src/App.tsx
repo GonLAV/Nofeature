@@ -22,6 +22,7 @@ import Postmortems from './pages/Postmortems/Postmortems';
 import Promises from './pages/Promises/Promises';
 import Calibration from './pages/Calibration/Calibration';
 import FailureDna from './pages/FailureDna/FailureDna';
+import Investigations from './pages/Investigations/Investigations';
 import Board from './pages/Board/Board';
 import Services from './pages/Services/Services';
 import Inbox from './pages/Inbox/Inbox';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="promises" element={<Promises />} />
           <Route path="calibration" element={<Calibration />} />
           <Route path="dna" element={<FailureDna />} />
+          <Route path="investigations" element={<Investigations />} />
           <Route path="board" element={<Board />} />
           <Route path="services" element={<Services />} />
           <Route path="inbox" element={<Inbox />} />
