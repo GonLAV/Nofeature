@@ -21,6 +21,7 @@ import SearchPage from './pages/Search/Search';
 import Postmortems from './pages/Postmortems/Postmortems';
 import Promises from './pages/Promises/Promises';
 import Calibration from './pages/Calibration/Calibration';
+import Doppelgangers from './pages/Doppelgangers/Doppelgangers';
 import FailureDna from './pages/FailureDna/FailureDna';
 import Investigations from './pages/Investigations/Investigations';
 import Board from './pages/Board/Board';
@@ -59,6 +60,7 @@ export default function App() {
           <Route path="postmortems" element={<Postmortems />} />
           <Route path="promises" element={<Promises />} />
           <Route path="calibration" element={<Calibration />} />
+          <Route path="doppelgangers" element={<Doppelgangers />} />
           <Route path="dna" element={<FailureDna />} />
           <Route path="investigations" element={<Investigations />} />
           <Route path="board" element={<Board />} />

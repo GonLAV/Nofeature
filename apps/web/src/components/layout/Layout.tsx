@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon, Handshake, Target, Dna, FlaskConical } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon, Handshake, Target, Wand2, Dna } from 'lucide-react';
 import { useThemeStore } from '../../store/theme.store';
 import MentionsBell from './MentionsBell';
 import CommandPalette from './CommandPalette';
@@ -99,6 +99,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/calibration" className={navClass}>
             <Target size={16} /> Calibration
+          </NavLink>
+          <NavLink to="/doppelgangers" className={navClass}>
+            <Wand2 size={16} /> Doppelgangers
           </NavLink>
           <NavLink to="/dna" className={navClass}>
             <Dna size={16} /> Failure DNA
