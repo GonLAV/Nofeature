@@ -59,6 +59,7 @@ import promiseRoutes from './modules/promises/promise.routes';
 import calibrationRoutes from './modules/calibration/calibration.routes';
 import doppelgangersRoutes from './modules/doppelgangers/doppelgangers.routes';
 import dnaRoutes from './modules/dna/dna.routes';
+import hypothesesRoutes from './modules/hypotheses/hypotheses.routes';
 import incidentExportRoutes from './modules/incidents/incident-export.routes';
 
 const app = express();
@@ -188,6 +189,7 @@ app.use(`${API}`,              promiseRoutes);
 app.use(`${API}`,              calibrationRoutes);
 app.use(`${API}`,              doppelgangersRoutes);
 app.use(`${API}`,              dnaRoutes);
+app.use(`${API}`,              hypothesesRoutes);
 app.use(`${API}`,              incidentExportRoutes);
 
 // ── Error Handling ──────────────────────────────────────────

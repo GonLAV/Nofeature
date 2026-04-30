@@ -106,6 +106,9 @@ export default function Layout() {
           <NavLink to="/dna" className={navClass}>
             <Dna size={16} /> Failure DNA
           </NavLink>
+          <NavLink to="/investigations" className={navClass}>
+            <FlaskConical size={16} /> Investigations
+          </NavLink>
           <NavLink to="/board" className={navClass}>
             <LayoutGrid size={16} /> Board
           </NavLink>
