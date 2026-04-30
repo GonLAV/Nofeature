@@ -7,6 +7,7 @@ import api from '../../lib/api';
 import IncidentChat from '../../components/incident/IncidentChat';
 import IncidentLinks from '../../components/incident/IncidentLinks';
 import SimilarIncidents from '../../components/incident/SimilarIncidents';
+import IncidentGenomePanel from '../../components/incident/IncidentGenomePanel';
 import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
 import LinkedIncidentsPanel from '../../components/incident/LinkedIncidentsPanel';
 import ExportButtons from '../../components/incident/ExportButtons';
@@ -202,6 +203,7 @@ export default function IncidentDetail() {
       )}
       {id && <ExportButtons incidentId={id} />}
       {id && <SimilarIncidents incidentId={id} />}
+      {id && <IncidentGenomePanel incidentId={id} />}
       {id && <IncidentChat incidentId={id} />}
     </div>
   );
