@@ -8,6 +8,7 @@ import IncidentChat from '../../components/incident/IncidentChat';
 import IncidentLinks from '../../components/incident/IncidentLinks';
 import SimilarIncidents from '../../components/incident/SimilarIncidents';
 import IncidentGenomePanel from '../../components/incident/IncidentGenomePanel';
+import ConvergencePanel from '../../components/incident/ConvergencePanel';
 import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
 import LinkedIncidentsPanel from '../../components/incident/LinkedIncidentsPanel';
 import ExportButtons from '../../components/incident/ExportButtons';
@@ -204,6 +205,7 @@ export default function IncidentDetail() {
       {id && <ExportButtons incidentId={id} />}
       {id && <SimilarIncidents incidentId={id} />}
       {id && <IncidentGenomePanel incidentId={id} />}
+      {id && <ConvergencePanel incidentId={id} />}
       {id && <IncidentChat incidentId={id} />}
     </div>
   );
