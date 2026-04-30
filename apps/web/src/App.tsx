@@ -24,6 +24,7 @@ import Services from './pages/Services/Services';
 import Inbox from './pages/Inbox/Inbox';
 import StatusEmbed from './pages/Settings/StatusEmbed';
 import SharedIncident from './pages/Share/SharedIncident';
+import Treasury from './pages/Treasury/Treasury';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -45,6 +46,7 @@ export default function App() {
           <Route path="team" element={<Team />} />
           <Route path="audit" element={<AuditLog />} />
           <Route path="analytics" element={<Analytics />} />
+          <Route path="treasury" element={<Treasury />} />
           <Route path="maintenance" element={<Maintenance />} />
           <Route path="templates" element={<Templates />} />
           <Route path="integrations" element={<Integrations />} />

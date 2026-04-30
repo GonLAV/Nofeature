@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon, Wallet } from 'lucide-react';
 import { useThemeStore } from '../../store/theme.store';
 import MentionsBell from './MentionsBell';
 import CommandPalette from './CommandPalette';
@@ -69,6 +69,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/analytics" className={navClass}>
             <BarChart2 size={16} /> Analytics
+          </NavLink>
+          <NavLink to="/treasury" className={navClass}>
+            <Wallet size={16} /> Treasury
           </NavLink>
           <NavLink to="/digest" className={navClass}>
             <Sparkles size={16} /> Weekly Digest
