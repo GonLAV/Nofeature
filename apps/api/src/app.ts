@@ -12,6 +12,8 @@ import { errorHandler } from './middleware/errorHandler';
 import { notFound } from './middleware/notFound';
 import { apiLimiter } from './middleware/rateLimiter';
 import { requestContextMiddleware } from './middleware/requestContext';
+import { metricsMiddleware, registry as metricsRegistry } from './middleware/metrics';
+import { idempotency } from './middleware/idempotency';
 import healthRoutes from './modules/health/health.routes';
 
 import authRoutes from './modules/auth/auth.routes';
@@ -117,9 +119,27 @@ app.use('/api/', apiLimiter);
 // Mounted at root (no /api/v1 prefix) so probes don't have to
 // hard-code an API version.
 app.use(healthRoutes);
-
+// ── Prometheus Metrics ───────────────────────────────
+// Per-request latency / counter middleware, then a /metrics
+// scrape endpoint. Defaults registry already covers process
+// CPU / RSS / event-loop lag / GC pauses.
+app.use(metricsMiddleware);
+app.get('/metrics', async (_req, res) => {
+  try {
+    res.set('Content-Type', metricsRegistry.contentType);
+    res.end(await metricsRegistry.metrics());
+  } catch (err) {
+    res.status(500).end((err as Error).message);
+  }
+});
 // ── API Routes ──────────────────────────────────────────────
+// Idempotency middleware runs only on mutating verbs and is a no-op
+// without an `Idempotency-Key` header, so legacy clients are
+// unaffected. Mounting at the API root covers all v1 endpoints.
 const API = `/api/${config.apiVersion}`;
+app.use(API, (req, res, next) =>
+  ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) ? idempotency(req, res, next) : next(),
+);
 app.use(`${API}/auth`,      authRoutes);
 app.use(`${API}/incidents`, incidentRoutes);
 app.use(`${API}/users`,     userRoutes);
@@ -230,7 +250,7 @@ async function shutdown(signal: string): Promise<void> {
     // don't block exit — we're already shutting down.
     await Promise.allSettled([
       redis.quit().then(() => logger.info('Redis disconnected')),
-      db.query('SELECT 1').catch(() => undefined), // no public pool.end yet; placeholder
+      db.close().then(() => logger.info('PostgreSQL pool drained')),
     ]);
     clearTimeout(deadline);
     logger.info('Shutdown complete');

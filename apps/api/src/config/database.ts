@@ -47,6 +47,21 @@ export const db = {
       return false;
     }
   },
+
+  /**
+   * Live snapshot of the connection pool. Used by the metrics
+   * endpoint and helpful for diagnosing connection-leak hangs.
+   */
+  poolStats: () => ({
+    total:    pool.totalCount,
+    idle:     pool.idleCount,
+    waiting:  pool.waitingCount,
+  }),
+
+  /** Drain the pool. Safe to await during graceful shutdown. */
+  close: async (): Promise<void> => {
+    await pool.end();
+  },
 };
 
 export default db;
