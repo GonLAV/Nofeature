@@ -33,9 +33,10 @@ describe('Incidents API', () => {
     expect(res.status).toBe(422);
   });
 
-  it('GET /health returns ok', async () => {
-    const res = await request(app).get('/health');
+  it('GET /livez returns ok (dependency-free liveness probe)', async () => {
+    const res = await request(app).get('/livez');
     expect(res.status).toBe(200);
     expect(res.body.status).toBe('ok');
+    expect(typeof res.body.uptimeSec).toBe('number');
   });
 });
