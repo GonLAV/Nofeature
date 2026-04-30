@@ -11,6 +11,7 @@ import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
 import LinkedIncidentsPanel from '../../components/incident/LinkedIncidentsPanel';
 import ExportButtons from '../../components/incident/ExportButtons';
 import CommentsPanel from '../../components/incident/CommentsPanel';
+import HypothesisTrackerPanel from '../../components/incident/HypothesisTrackerPanel';
 import TagsPanel from '../../components/incident/TagsPanel';
 import PresenceIndicator from '../../components/incident/PresenceIndicator';
 import SlaBadge from '../../components/incident/SlaBadge';
@@ -189,6 +190,7 @@ export default function IncidentDetail() {
       {id && <PresenceIndicator incidentId={id} />}
       {id && <TagsPanel incidentId={id} />}
       {id && <CommentsPanel incidentId={id} />}
+      {id && <HypothesisTrackerPanel incidentId={id} status={incident?.status} />}
       {id && <ActionItemsPanel incidentId={id} />}
       {id && <RelatedIncidentsPanel incidentId={id} />}
       {id && <PostmortemPanel incidentId={id} />}
