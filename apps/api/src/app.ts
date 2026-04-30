@@ -50,6 +50,7 @@ import savedFiltersRoutes from './modules/saved-filters/saved-filters.routes';
 import inboxRoutes from './modules/inbox/inbox.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 import incidentExportRoutes from './modules/incidents/incident-export.routes';
+import insightsRoutes from './modules/insights/insights.routes';
 
 const app = express();
 
@@ -159,6 +160,7 @@ app.use(`${API}/presence`,     presenceRoutes);
 app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);
 app.use(`${API}`,              incidentExportRoutes);
+app.use(`${API}`,              insightsRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

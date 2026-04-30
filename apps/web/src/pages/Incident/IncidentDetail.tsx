@@ -7,6 +7,7 @@ import api from '../../lib/api';
 import IncidentChat from '../../components/incident/IncidentChat';
 import IncidentLinks from '../../components/incident/IncidentLinks';
 import SimilarIncidents from '../../components/incident/SimilarIncidents';
+import ResolutionDnaPanel from '../../components/incident/ResolutionDnaPanel';
 import CustomerImpactPanel from '../../components/incident/CustomerImpactPanel';
 import LinkedIncidentsPanel from '../../components/incident/LinkedIncidentsPanel';
 import ExportButtons from '../../components/incident/ExportButtons';
@@ -201,6 +202,7 @@ export default function IncidentDetail() {
         />
       )}
       {id && <ExportButtons incidentId={id} />}
+      {id && <ResolutionDnaPanel incidentId={id} />}
       {id && <SimilarIncidents incidentId={id} />}
       {id && <IncidentChat incidentId={id} />}
     </div>
