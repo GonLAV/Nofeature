@@ -56,6 +56,7 @@ import inboxRoutes from './modules/inbox/inbox.routes';
 import incidentExtrasRoutes from './modules/incidents/incident-extras.routes';
 import genomeRoutes from './modules/genome/genome.routes';
 import promiseRoutes from './modules/promises/promise.routes';
+import calibrationRoutes from './modules/calibration/calibration.routes';
 import incidentExportRoutes from './modules/incidents/incident-export.routes';
 
 const app = express();
@@ -182,6 +183,7 @@ app.use(`${API}`,              docsRoutes);
 app.use(`${API}`,              incidentExtrasRoutes);
 app.use(`${API}`,              genomeRoutes);
 app.use(`${API}`,              promiseRoutes);
+app.use(`${API}`,              calibrationRoutes);
 app.use(`${API}`,              incidentExportRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
