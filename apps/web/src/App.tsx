@@ -24,6 +24,8 @@ import Services from './pages/Services/Services';
 import Inbox from './pages/Inbox/Inbox';
 import StatusEmbed from './pages/Settings/StatusEmbed';
 import SharedIncident from './pages/Share/SharedIncident';
+import Rehearsal from './pages/Rehearsal/Rehearsal';
+import RehearsalSession from './pages/Rehearsal/RehearsalSession';
 
 const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.accessToken);
@@ -58,6 +60,8 @@ export default function App() {
           <Route path="inbox" element={<Inbox />} />
           <Route path="status-embed" element={<StatusEmbed />} />
           <Route path="settings" element={<Settings />} />
+          <Route path="rehearsal" element={<Rehearsal />} />
+          <Route path="rehearsal/:id" element={<RehearsalSession />} />
         </Route>
       </Routes>
     </BrowserRouter>
