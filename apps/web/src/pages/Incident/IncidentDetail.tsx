@@ -18,6 +18,7 @@ import SlaBadge from '../../components/incident/SlaBadge';
 import ActionItemsPanel from '../../components/incident/ActionItemsPanel';
 import RelatedIncidentsPanel from '../../components/incident/RelatedIncidentsPanel';
 import PostmortemPanel from '../../components/incident/PostmortemPanel';
+import ConfidenceGradient from '../../components/incident/ConfidenceGradient';
 import WatchButton from '../../components/incident/WatchButton';
 import IncidentServices from '../../components/incident/IncidentServices';
 import StatusUpdatesPanel from '../../components/incident/StatusUpdatesPanel';
@@ -193,6 +194,7 @@ export default function IncidentDetail() {
       {id && <ActionItemsPanel incidentId={id} />}
       {id && <RelatedIncidentsPanel incidentId={id} />}
       {id && <PostmortemPanel incidentId={id} />}
+      {id && <ConfidenceGradient incidentId={id} />}
       {id && <LinkedIncidentsPanel incidentId={id} />}
       {id && incident && (
         <CustomerImpactPanel
