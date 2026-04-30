@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon, Handshake } from 'lucide-react';
 import { useThemeStore } from '../../store/theme.store';
 import MentionsBell from './MentionsBell';
 import CommandPalette from './CommandPalette';
@@ -93,6 +93,9 @@ export default function Layout() {
           </NavLink>
           <NavLink to="/postmortems" className={navClass}>
             <FileText size={16} /> Postmortems
+          </NavLink>
+          <NavLink to="/promises" className={navClass}>
+            <Handshake size={16} /> Promises
           </NavLink>
           <NavLink to="/board" className={navClass}>
             <LayoutGrid size={16} /> Board
