@@ -61,6 +61,7 @@ import doppelgangersRoutes from './modules/doppelgangers/doppelgangers.routes';
 import dnaRoutes from './modules/dna/dna.routes';
 import hypothesesRoutes from './modules/hypotheses/hypotheses.routes';
 import incidentExportRoutes from './modules/incidents/incident-export.routes';
+import costRoutes from './modules/cost/cost.routes';
 
 const app = express();
 
@@ -191,6 +192,7 @@ app.use(`${API}`,              doppelgangersRoutes);
 app.use(`${API}`,              dnaRoutes);
 app.use(`${API}`,              hypothesesRoutes);
 app.use(`${API}`,              incidentExportRoutes);
+app.use(`${API}`,              costRoutes);
 
 // ── Error Handling ──────────────────────────────────────────
 app.use(notFound);

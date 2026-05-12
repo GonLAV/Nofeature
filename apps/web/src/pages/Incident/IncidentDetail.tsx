@@ -15,6 +15,7 @@ import CommentsPanel from '../../components/incident/CommentsPanel';
 import TagsPanel from '../../components/incident/TagsPanel';
 import PresenceIndicator from '../../components/incident/PresenceIndicator';
 import SlaBadge from '../../components/incident/SlaBadge';
+import IncidentCostMeter from '../../components/incident/IncidentCostMeter';
 import ActionItemsPanel from '../../components/incident/ActionItemsPanel';
 import RelatedIncidentsPanel from '../../components/incident/RelatedIncidentsPanel';
 import PostmortemPanel from '../../components/incident/PostmortemPanel';
@@ -180,6 +181,7 @@ export default function IncidentDetail() {
       </div>
       {id && <IncidentLinks incidentId={id} />}
       {id && <SlaBadge incidentId={id} canAck={!incident.acknowledged_at && incident.status !== 'closed'} onAcknowledge={() => ackMutation.mutate()}/>}
+      {id && <IncidentCostMeter incidentId={id} status={incident.status} />}
       {id && <div><WatchButton incidentId={id} /></div>}
       {id && <IncidentServices incidentId={id} />}
       {id && <StatusUpdatesPanel incidentId={id} />}
