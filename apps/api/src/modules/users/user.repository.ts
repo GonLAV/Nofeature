@@ -71,6 +71,13 @@ export class UserRepository {
     return rows[0] || null;
   }
 
+  async updatePasswordHash(id: string, passwordHash: string) {
+    await db.query(
+      'UPDATE users SET password_hash = $2, updated_at = NOW() WHERE id = $1',
+      [id, passwordHash]
+    );
+  }
+
   async softDelete(id: string, tenantId: string) {
     await db.query(
       'UPDATE users SET deleted_at = NOW() WHERE id = $1 AND tenant_id = $2',

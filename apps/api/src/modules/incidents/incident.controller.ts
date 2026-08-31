@@ -3,13 +3,16 @@ import { IncidentService } from './incident.service';
 import { IncidentRepository } from './incident.repository';
 import { AIService } from '../ai/ai.service';
 import { NotificationService } from '../notifications/notification.service';
+import { UserRepository } from '../users/user.repository';
 import { createIncidentSchema, updateStatusSchema } from './incident.schema';
+import { ValidationError } from '../../utils/errors';
 
 const incidentService = new IncidentService(
   new IncidentRepository(),
   new AIService(),
   new NotificationService(),
 );
+const userRepo = new UserRepository();
 
 export const list = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -56,6 +59,10 @@ export const updateStatus = async (req: Request, res: Response, next: NextFuncti
 export const assignCommander = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { commanderId } = req.body;
+    const commander = await userRepo.findById(commanderId);
+    if (!commander || commander.tenant_id !== req.user!.tenantId) {
+      throw new ValidationError('Commander must belong to the same tenant');
+    }
     const incident = await incidentService.assignCommander(
       req.params.id, req.user!.tenantId, commanderId, req.user!.userId
     );

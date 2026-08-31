@@ -9,6 +9,7 @@ export interface JwtPayload {
   email: string;
   name: string;
   role: string;
+  isActive: boolean;
   iat?: number;
   exp?: number;
 }
@@ -28,9 +29,16 @@ export const authenticate = (req: Request, _res: Response, next: NextFunction) =
   const token = header.split(' ')[1];
   try {
     const payload = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
+
+    // Reject tokens for deactivated users without a DB round-trip.
+    // Accounts deactivated AFTER token issue are rejected on the next
+    // token refresh (15-min window). For immediate revocation use logout.
+    if (payload.isActive === false) throw new UnauthorizedError('Account is disabled');
+
     req.user = payload;
     next();
   } catch (err) {
+    if (err instanceof UnauthorizedError) throw err;
     if (err instanceof jwt.TokenExpiredError) throw new UnauthorizedError('Token expired');
     throw new UnauthorizedError('Invalid token');
   }
@@ -48,7 +56,8 @@ export const optionalAuth = (req: Request, _res: Response, next: NextFunction) =
   if (!header?.startsWith('Bearer ')) return next();
   try {
     const token = header.split(' ')[1];
-    req.user = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
+    const payload = jwt.verify(token, config.jwt.accessSecret) as JwtPayload;
+    if (payload.isActive !== false) req.user = payload;
   } catch { /* ignore */ }
   next();
 };

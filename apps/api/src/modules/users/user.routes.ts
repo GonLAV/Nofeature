@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import { z } from 'zod';
 import { authenticate, authorize } from '../../middleware/auth';
 import { UserRepository } from './user.repository';
+import { writeAudit } from '../../utils/audit';
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -35,7 +36,7 @@ router.post('/invite', authorize('admin', 'owner'), async (req: Request, res: Re
     const tempPassword = randomPassword();
     const passwordHash = await bcrypt.hash(tempPassword, 10);
     const user = await userRepo.create({ email, name, role, tenantId: req.user!.tenantId, passwordHash });
-    // Temp password returned once so admin can share it with the invitee
+    await writeAudit({ tenantId: req.user!.tenantId, userId: req.user!.userId, action: 'USER_INVITED', metadata: { invitedEmail: email, role } });
     res.status(201).json({ success: true, data: { id: user.id, email: user.email, name: user.name, role: user.role, tempPassword } });
   } catch (err) { next(err); }
 });
@@ -43,6 +44,7 @@ router.post('/invite', authorize('admin', 'owner'), async (req: Request, res: Re
 router.patch('/:id', authorize('admin', 'owner'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = await userRepo.update(req.params.id, req.user!.tenantId, req.body);
+    await writeAudit({ tenantId: req.user!.tenantId, userId: req.user!.userId, action: 'USER_UPDATED', resourceId: req.params.id, metadata: req.body });
     res.json({ success: true, data: user });
   } catch (err) { next(err); }
 });
@@ -50,6 +52,7 @@ router.patch('/:id', authorize('admin', 'owner'), async (req: Request, res: Resp
 router.delete('/:id', authorize('admin', 'owner'), async (req: Request, res: Response, next: NextFunction) => {
   try {
     await userRepo.softDelete(req.params.id, req.user!.tenantId);
+    await writeAudit({ tenantId: req.user!.tenantId, userId: req.user!.userId, action: 'USER_REMOVED', resourceId: req.params.id });
     res.json({ success: true, message: 'User removed' });
   } catch (err) { next(err); }
 });

@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service';
 import { UserRepository } from '../users/user.repository';
-import { registerSchema, loginSchema } from './auth.schema';
+import { registerSchema, loginSchema, changePasswordSchema } from './auth.schema';
 
 const authService = new AuthService(new UserRepository());
 
@@ -38,6 +38,14 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
   try {
     await authService.logout(req.user!.userId);
     res.json({ success: true, message: 'Logged out successfully' });
+  } catch (err) { next(err); }
+};
+
+export const changePassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { currentPassword, newPassword } = changePasswordSchema.parse(req.body);
+    await authService.changePassword(req.user!.userId, currentPassword, newPassword);
+    res.json({ success: true, message: 'Password changed successfully' });
   } catch (err) { next(err); }
 };
 
