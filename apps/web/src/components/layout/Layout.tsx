@@ -1,5 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
-import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon, Handshake, Target, Wand2, Dna } from 'lucide-react';
+import { Zap, LayoutDashboard, BarChart2, LogOut, BookOpen, Users, ScrollText, Calendar, FileText, Plug, CalendarClock, Bell, Settings as SettingsIcon, Sparkles, Sun, Moon, Search, LayoutGrid, Server, Inbox as InboxIcon, Handshake, Target, Wand2, Dna, FlaskConical } from 'lucide-react';
 import { useThemeStore } from '../../store/theme.store';
 import MentionsBell from './MentionsBell';
 import CommandPalette from './CommandPalette';
