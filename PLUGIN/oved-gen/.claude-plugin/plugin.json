@@ -1,0 +1,21 @@
+{
+  "name": "oved-gen",
+  "version": "1.0.0",
+  "description": "עובד — סוכן-שותף לחיפוש עבודה: משפר קורות חיים ומתאים אותם למשרה ספציפית, מכין מכתב מקדים, ומאתר משרות remote/relocation (עדיפות לקנדה) — מכין הכל להגשה, אבל לא מגיש בעצמו.",
+  "author": {
+    "name": "גון"
+  },
+  "keywords": [
+    "oved",
+    "partner-agent",
+    "resume",
+    "cv",
+    "cover-letter",
+    "job-search",
+    "linkedin",
+    "canada",
+    "remote-work",
+    "relocation",
+    "hebrew"
+  ]
+}
