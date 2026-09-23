@@ -1,0 +1,12 @@
+[project]
+name = "trader"
+version = "0.1.0"
+description = "Multi-agent trading system with a deterministic risk boundary and isolated $100 cycles (paper by default)"
+requires-python = ">=3.11"
+dependencies = []  # runtime is stdlib-only by design
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

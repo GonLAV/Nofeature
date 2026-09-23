@@ -191,6 +191,13 @@ incident-war-room/
 
 ---
 
+## 📈 apps/trader
+
+A separate, self-contained Python app: a multi-agent trading system with a deterministic Risk Engine and
+isolated $100 trading cycles (paper trading only; live is disabled). See [apps/trader/README.md](apps/trader/README.md).
+
+---
+
 ## 🚢 Deployment
 
 ### Environment Variables (production)
